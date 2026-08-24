@@ -77,5 +77,61 @@ class ReportTest(unittest.TestCase):
         self.assertIn("50%", md)  # 1/2 bug, 1/2 feature
 
 
+class ConcurrentClassifyTest(unittest.TestCase):
+    """离线验证并发分类：真并发提速、结果有序、失败兜底。"""
+
+    @staticmethod
+    def _fake_ok(payload_delay: float = 0.3):
+        import re
+        import time as _time
+
+        def fake(system, user, retries=2):
+            # 用全局 Issue 编号生成可区分摘要（局部 id 在单条批次中恒为 0）
+            nums = [int(x) for x in re.findall(r"\[o/r#(\d+)\]", user)]
+            _time.sleep(payload_delay)  # 模拟模型延迟
+            return [
+                {"id": nums.index(n), "category": "bug", "pain_level": 4,
+                 "emotion": "negative", "summary": f"s{n}"}
+                for n in nums
+            ]
+        return fake
+
+    def _engine_with_fake(self, fake_chat_json):
+        from src.ai_engine import PainIntelEngine
+        eng = PainIntelEngine(api_key="test-key")
+        eng.chat_json = fake_chat_json
+        return eng
+
+    def _issues(self, n: int):
+        return [Issue("o/r", i, f"t{i}", "b", "open", [], 1, 0, "", "", "u") for i in range(n)]
+
+    def test_concurrent_speedup_and_order(self):
+        import time
+        eng = self._engine_with_fake(self._fake_ok(0.3))
+        issues = self._issues(5)
+        t0 = time.perf_counter()
+        out = eng.classify_issues(issues, batch_size=1, max_workers=5)
+        dt = time.perf_counter() - t0
+        self.assertEqual(len(out), 5)
+        # 顺序与输入一致（summary 序号对应输入顺序）
+        self.assertEqual([r["summary"] for r in out], [f"s{i}" for i in range(5)])
+        # 串行需 >=1.5s，5 并发应远小于该值
+        self.assertLess(dt, 1.2, f"并发未生效，耗时 {dt:.2f}s")
+
+    def test_fallback_on_batch_failure(self):
+        def failing(system, user, retries=2):
+            raise RuntimeError("boom")
+        eng = self._engine_with_fake(failing)
+        issues = self._issues(4)
+        out = eng.classify_issues(issues, batch_size=2, max_workers=2)
+        self.assertEqual(len(out), 4)                  # 结果与输入等长
+        self.assertTrue(all("兜底" in r["summary"] for r in out))
+        self.assertEqual(len(eng.last_failures), 2)    # 两个批次都记录了失败
+
+    def test_empty_input(self):
+        eng = self._engine_with_fake(self._fake_ok())
+        self.assertEqual(eng.classify_issues([]), [])
+
+
 if __name__ == "__main__":
     unittest.main()

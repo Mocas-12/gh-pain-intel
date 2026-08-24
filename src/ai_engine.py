@@ -4,14 +4,17 @@
 2. 两阶段语义聚类：分批归纳主题 → 全局合并去重
 3. 开发者情绪分布与市场趋势研判
 
-所有模型输出强制 JSON 并做健壮解析（容忍代码围栏、前后缀闲话），解析失败自动重试。
+性能设计：分类阶段使用线程池并发请求多个批次（I/O 密集场景），
+传输层内置 429/5xx 指数退避；失败批次自动兜底，不中断整体管线。
 API Key 从环境变量 OPENROUTER_API_KEY 读取，或由调用方显式传入。
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import re
+import threading
 import time
 from typing import Callable
 
@@ -54,6 +57,26 @@ TREND_PROMPT = """你是技术市场分析师。基于以下统计与主题归�
 只依据给定材料，不要编造数据。"""
 
 
+def _load_dotenv(path: str | None = None) -> None:
+    """极简 .env 加载器：把 KEY=VALUE 注入环境变量（已存在的变量不覆盖）。"""
+    env_file = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+    try:
+        with open(env_file, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                k, v = k.strip(), v.strip().strip("'\"")
+                if k and v and k not in os.environ:
+                    os.environ[k] = v
+    except OSError:
+        pass
+
+
+_load_dotenv()
+
+
 def _extract_json(text: str):
     """从模型回复中稳健抽取 JSON（容忍 ``` 围栏与前后闲话）。"""
     text = text.strip()
@@ -80,7 +103,7 @@ def _chunk(seq: list, size: int):
 
 
 class PainIntelEngine:
-    """面向痛点情报的分析管线（OpenRouter · Ox Alpha）。"""
+    """面向痛点情报的分析管线（OpenRouter · Ox Alpha，并发批处理）。"""
 
     def __init__(
         self,
@@ -89,19 +112,23 @@ class PainIntelEngine:
         api_key: str | None = None,
         temperature: float = 0.2,
         timeout: int = 240,
+        max_workers: int = 4,
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.api_key = api_key or os.environ.get(DEFAULT_API_KEY_ENV, "")
         self.temperature = temperature
         self.timeout = timeout
+        # 并发上限保护：过高会触发平台限流（429），反而更慢
+        self.max_workers = max(1, min(max_workers, 8))
+        self.last_failures: list[str] = []  # 最近一次分类中降级失败的批次信息
         if not self.api_key:
             raise ValueError(
                 f"缺少 OpenRouter API Key：请设置环境变量 {DEFAULT_API_KEY_ENV} "
                 f"或在界面中填入（获取地址：https://openrouter.ai/keys）"
             )
 
-    # ---------- 底层对话 ----------
+    # ---------- 底层传输 ----------
     def _headers(self) -> dict:
         """OpenRouter 鉴权头 + 站点归因头（归因头可选但推荐）。"""
         return {
@@ -111,21 +138,39 @@ class PainIntelEngine:
         }
 
     def chat(self, system: str, user: str) -> str:
-        resp = requests.post(
-            f"{self.base_url}/chat/completions",
-            headers=self._headers(),
-            json={
-                "model": self.model,
-                "temperature": self.temperature,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-            },
-            timeout=self.timeout,
-        )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"]
+        """对话补全，内置 429/5xx 与网络抖动的指数退避重试（线程安全）。"""
+        delay = 2.0
+        last_exc: Exception | None = None
+        for attempt in range(4):
+            try:
+                resp = requests.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=self._headers(),
+                    json={
+                        "model": self.model,
+                        "temperature": self.temperature,
+                        "messages": [
+                            {"role": "system", "content": system},
+                            {"role": "user", "content": user},
+                        ],
+                    },
+                    timeout=self.timeout,
+                )
+                if resp.status_code == 429 or resp.status_code >= 500:
+                    wait = resp.headers.get("Retry-After")
+                    time.sleep(min(float(wait) if wait else delay, 30.0))
+                    delay *= 2
+                    last_exc = RuntimeError(f"HTTP {resp.status_code}")
+                    continue
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"]
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                last_exc = exc
+                if attempt == 3:
+                    raise
+                time.sleep(delay)
+                delay *= 2
+        raise RuntimeError(f"OpenRouter 请求连续失败: {last_exc}")
 
     def chat_json(self, system: str, user: str, retries: int = 2):
         last_exc: Exception | None = None
@@ -150,44 +195,99 @@ class PainIntelEngine:
         except requests.RequestException:
             return False
 
-    # ---------- 分析管线 ----------
-    def classify_issues(
-        self, issues: list, batch_size: int = 15, progress_cb: Callable[[int, int], None] | None = None
-    ) -> list[dict]:
-        """逐批分类，输出与输入等长的标准化记录列表。"""
-        results: list[dict] = []
-        batches = list(_chunk(issues, batch_size))
-        for idx, batch in enumerate(batches, 1):
-            payload = "\n\n".join(f"### id={i}\n{iss.flat_text[:1600]}" for i, iss in enumerate(batch))
-            data = self.chat_json(CLASSIFY_PROMPT, payload)
-            items = data if isinstance(data, list) else data.get("results", [])
-            by_id: dict[int, dict] = {}
-            for it in items:
-                try:
-                    by_id[int(it.get("id"))] = it
-                except (TypeError, ValueError):
-                    continue
-            for i, iss in enumerate(batch):
-                raw = by_id.get(i, {})
-                cat = str(raw.get("category", "other")).lower()
-                emo = str(raw.get("emotion", "neutral")).lower()
-                try:
-                    pain = max(1, min(5, int(raw.get("pain_level", 3))))
-                except (TypeError, ValueError):
-                    pain = 3
-                results.append(
-                    {
-                        "issue": iss,
-                        "category": cat if cat in VALID_CATEGORY else "other",
-                        "pain_level": pain,
-                        "emotion": emo if emo in VALID_EMOTION else "neutral",
-                        "summary": str(raw.get("summary", ""))[:80],
-                    }
-                )
-            if progress_cb:
-                progress_cb(idx, len(batches))
-        return results
+    # ---------- 分类（并发批处理核心） ----------
+    @staticmethod
+    def _default_record(iss) -> dict:
+        """单批彻底失败时的兜底记录，保证结果与输入等长。"""
+        return {"issue": iss, "category": "other", "pain_level": 3,
+                "emotion": "neutral", "summary": "（分类失败，已兜底）"}
 
+    @staticmethod
+    def _parse_classification(batch: list, data) -> list[dict]:
+        """把模型返回的 JSON 解析为与 batch 等长的标准化记录列表。"""
+        items = data if isinstance(data, list) else (
+            data.get("results", []) if isinstance(data, dict) else []
+        )
+        by_id: dict[int, dict] = {}
+        for it in items:
+            try:
+                by_id[int(it.get("id"))] = it
+            except (TypeError, ValueError, AttributeError):
+                continue
+        out: list[dict] = []
+        for i, iss in enumerate(batch):
+            raw = by_id.get(i, {})
+            cat = str(raw.get("category", "other")).lower()
+            emo = str(raw.get("emotion", "neutral")).lower()
+            try:
+                pain = max(1, min(5, int(raw.get("pain_level", 3))))
+            except (TypeError, ValueError):
+                pain = 3
+            out.append(
+                {
+                    "issue": iss,
+                    "category": cat if cat in VALID_CATEGORY else "other",
+                    "pain_level": pain,
+                    "emotion": emo if emo in VALID_EMOTION else "neutral",
+                    "summary": str(raw.get("summary", ""))[:80],
+                }
+            )
+        return out
+
+    def classify_issues(
+        self,
+        issues: list,
+        batch_size: int = 20,
+        max_workers: int | None = None,
+        progress_cb: Callable[[int, int], None] | None = None,
+    ) -> list[dict]:
+        """并发分批分类：多个批次同时请求模型，输出与输入等长且顺序一致。
+
+        失败的批次自动用中性默认值兜底（详情记入 self.last_failures），不中断整体。
+        """
+        self.last_failures = []
+        if not issues:
+            return []
+        batches = list(_chunk(issues, batch_size))
+        workers = max(1, min(max_workers or self.max_workers, self.max_workers))
+        total = len(batches)
+
+        def work(idx: int, batch: list) -> tuple[int, list[dict]]:
+            payload = "\n\n".join(
+                f"### id={i}\n{iss.flat_text[:1600]}" for i, iss in enumerate(batch)
+            )
+            return idx, self._parse_classification(batch, self.chat_json(CLASSIFY_PROMPT, payload))
+
+        results: dict[int, list[dict]] = {}
+        failed: set[int] = set()
+        lock = threading.Lock()
+        done = [0]
+
+        with ThreadPoolExecutor(max_workers=min(workers, len(batches))) as pool:
+            fut_map = {pool.submit(work, i, b): i for i, b in enumerate(batches)}
+            for fut in as_completed(fut_map):
+                idx = fut_map[fut]
+                try:
+                    _, recs = fut.result()
+                    results[idx] = recs
+                except Exception as exc:  # 单批失败不影响其他批次
+                    failed.add(idx)
+                    self.last_failures.append(f"批次{idx}: {str(exc)[:150]}")
+                finally:
+                    with lock:
+                        done[0] += 1
+                        if progress_cb:
+                            progress_cb(done[0], total)
+
+        ordered: list[dict] = []
+        for idx, batch in enumerate(batches):
+            if idx in failed:
+                ordered.extend(self._default_record(iss) for iss in batch)
+            else:
+                ordered.extend(results[idx])
+        return ordered
+
+    # ---------- 聚类与趋势 ----------
     def cluster_themes(self, classified: list[dict]) -> list[dict]:
         """第二阶段：把全部分类摘要归纳为全局主题簇。"""
         lines = [
@@ -235,17 +335,25 @@ class PainIntelEngine:
         data.setdefault("emotion_distribution", emo_dist)
         return data
 
+    # ---------- 完整管线 ----------
     def run_pipeline(
-        self, issues: list, progress_cb: Callable[[str, float], None] | None = None
+        self,
+        issues: list,
+        batch_size: int = 20,
+        max_workers: int | None = None,
+        progress_cb: Callable[[str, float], None] | None = None,
     ) -> dict:
-        """完整管线：分类 → 聚类 → 趋势。progress_cb(stage, ratio)。"""
+        """完整管线：并发分类 → 聚类 → 趋势。progress_cb(stage, ratio)。"""
 
         def notify(stage: str, cur: int, tot: int) -> None:
             if progress_cb:
                 progress_cb(stage, cur / max(tot, 1))
 
         notify("classify", 0, 1)
-        classified = self.classify_issues(issues, progress_cb=lambda c, t: notify("classify", c, t))
+        classified = self.classify_issues(
+            issues, batch_size=batch_size, max_workers=max_workers,
+            progress_cb=lambda c, t: notify("classify", c, t),
+        )
         notify("cluster", 0, 1)
         themes = self.cluster_themes(classified)
         notify("trends", 0, 1)

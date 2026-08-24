@@ -49,6 +49,10 @@ with st.sidebar:
             placeholder="sk-or-v1-…",
         )
         temperature = st.slider("Temperature", 0.0, 1.0, 0.2)
+        col_b, col_w = st.columns(2)
+        batch_size = col_b.slider("批大小（条/请求）", 5, 40, 20)
+        max_workers = col_w.slider("并发请求数", 1, 8, 4)
+        st.caption("⚡ 并发批处理可大幅提升分类速度；但并发过高会触发平台限流(429)，退避重试反而变慢")
 
 run_btn = st.button("🚀 开始抓取与分析", type="primary", use_container_width=True)
 
@@ -82,7 +86,9 @@ if run_btn:
         st.stop()
 
     progress.progress(0.25, text=f"已抓取 {len(issues)} 条 Issue，正在连接 OpenRouter…")
-    engine = PainIntelEngine(DEFAULT_BASE_URL, model, api_key.strip(), temperature)
+    engine = PainIntelEngine(
+        DEFAULT_BASE_URL, model, api_key.strip(), temperature, max_workers=max_workers
+    )
     if not engine.health_check():
         st.error(
             f"无法连接 OpenRouter（{DEFAULT_BASE_URL}）或 API Key 无效。"
@@ -102,11 +108,18 @@ if run_btn:
         )
 
     try:
-        result = engine.run_pipeline(issues, progress_cb=stage_progress)
+        result = engine.run_pipeline(
+            issues, batch_size=batch_size, max_workers=max_workers, progress_cb=stage_progress
+        )
     except Exception as exc:
         st.error(f"分析失败：{exc}")
         st.stop()
 
+    if engine.last_failures:
+        st.warning(
+            f"⚠️ {len(engine.last_failures)} 个批次分类失败，已用默认值兜底（不影响其余样本）："
+            + "; ".join(engine.last_failures[:3])
+        )
     st.session_state.result = result
     st.session_state.errors = errors
     st.session_state.scrape_meta = {

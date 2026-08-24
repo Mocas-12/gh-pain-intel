@@ -24,6 +24,8 @@ def main() -> None:
     repos = os.environ.get("E2E_REPOS", "pandas-dev/pandas").split(",")
     days = int(os.environ.get("E2E_DAYS", "7"))
     n = int(os.environ.get("E2E_MAX", "6"))
+    batch = int(os.environ.get("E2E_BATCH", "12"))
+    workers = int(os.environ.get("E2E_WORKERS", "4"))
 
     client = GitHubClient(token=os.environ.get("GITHUB_TOKEN"))
     issues: list = []
@@ -43,8 +45,10 @@ def main() -> None:
 
     engine = PainIntelEngine()
     print(f"[2/2] 模型管线: {engine.model} @ {engine.base_url}")
+    print(f"      配置: batch_size={batch}, max_workers={workers}")
     result = engine.run_pipeline(
-        issues, progress_cb=lambda s, r: print(f"   {s} {r:.0%} ({time.time() - t0:.0f}s)")
+        issues, batch_size=batch, max_workers=workers,
+        progress_cb=lambda s, r: print(f"   {s} {r:.0%} ({time.time() - t0:.0f}s)"),
     )
 
     cats = Counter(c["category"] for c in result["classified"])

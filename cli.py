@@ -23,6 +23,8 @@ def main() -> None:
     ap.add_argument("--days", type=int, default=7)
     ap.add_argument("--max-per-repo", type=int, default=120)
     ap.add_argument("--no-comments", action="store_true", help="不抓取评论上下文")
+    ap.add_argument("--batch-size", type=int, default=20, help="每次模型请求包含的 Issue 数")
+    ap.add_argument("--max-workers", type=int, default=4, help="分类阶段并发请求数（上限8）")
     ap.add_argument("--base-url", default=os.environ.get("OPENROUTER_BASE_URL", DEFAULT_BASE_URL))
     ap.add_argument("--model", default=os.environ.get("OPENROUTER_MODEL", DEFAULT_MODEL))
     ap.add_argument("--api-key", default=os.environ.get("OPENROUTER_API_KEY"))
@@ -52,8 +54,11 @@ def main() -> None:
         sys.exit("未抓取到任何 Issue，退出。")
 
     print(f"[2/3] 共 {len(issues)} 条样本，调用模型 {args.model} @ {args.base_url} …")
-    engine = PainIntelEngine(args.base_url, args.model, args.api_key)
-    result = engine.run_pipeline(issues, progress_cb=lambda s, r: print(f"  {s}: {r:.0%}"))
+    engine = PainIntelEngine(args.base_url, args.model, args.api_key, max_workers=args.max_workers)
+    result = engine.run_pipeline(
+        issues, batch_size=args.batch_size, max_workers=args.max_workers,
+        progress_cb=lambda s, r: print(f"  {s}: {r:.0%}"),
+    )
 
     meta = {
         "repos": repos,
