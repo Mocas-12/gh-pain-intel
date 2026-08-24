@@ -13,18 +13,21 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
+from src.ui import hero, inject, stat_cards, theme_card
 
-st.set_page_config(page_title="gh-pain-intel · 开源痛点情报看板", page_icon="🛰️", layout="wide")
+st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
+inject()
 
-st.title("🛰️ gh-pain-intel · 开源社区痛点情报看板")
-st.caption(
-    "监控指定仓库近一周 Issue → Ox Alpha 语义聚类与情绪研判 → 一键导出 Markdown 市场研究报告"
-    "（只读分析，仅供内部研究）"
+hero(
+    "LIVE INTEL · OX ALPHA",
+    "开源社区痛点情报中心",
+    "GitHub Issue 监控 → Ox Alpha 深度语义分析 → 一键导出市场研究报告（只读 · 内部研究用途）",
 )
 
 
@@ -210,12 +213,15 @@ if st.session_state.result:
     neg = sum(1 for c in classified if c["emotion"] in ("negative", "angry"))
     total = len(classified)
 
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("📦 分析样本", total)
-    m2.metric("🐞 缺陷占比", pct_str(bugs, total))
-    m3.metric("🚀 功能诉求占比", pct_str(feats, total))
-    m4.metric("😠 负面情绪", pct_str(neg, total))
-    m5.metric("🧭 整体情绪", trends.get("overall_sentiment", "N/A"))
+    stat_cards(
+        [
+            ("分析样本", f"{total}<small> 条</small>", "#22d3ee"),
+            ("缺陷占比", pct_str(bugs, total), "#f87171"),
+            ("功能诉求", pct_str(feats, total), "#34d399"),
+            ("负面情绪", pct_str(neg, total), "#fbbf24"),
+            ("整体情绪", trends.get("overall_sentiment", "N/A"), "#8b5cf6"),
+        ]
+    )
 
     tab_pain, tab_feat, tab_trend, tab_report = st.tabs(
         ["🐞 高频痛点", "🚀 功能诉求", "📈 情绪与趋势", "📄 研究报告"]
@@ -228,14 +234,7 @@ if st.session_state.result:
             key=lambda t: (SEVERITY_ORDER.get(str(t["severity"]), 1), -t["frequency"]),
         )
         for t in pain_themes:
-            with st.container(border=True):
-                cols = st.columns([4, 1, 1])
-                cols[0].markdown(f"### {t['name']}")
-                cols[1].metric("频次", t["frequency"])
-                cols[2].metric("严重度", t["severity"])
-                st.markdown(f"> {t['insight']}")
-                for q in t["representatives"]:
-                    st.caption(f"💬 {q}")
+            st.markdown(theme_card(t), unsafe_allow_html=True)
         st.divider()
         st.subheader("痛感最高的 Issue")
         top = sorted(classified, key=lambda c: (-c["pain_level"], -(c["issue"].comments_count)))[:10]
@@ -260,14 +259,7 @@ if st.session_state.result:
             [t for t in themes if t["category"] == "feature"], key=lambda t: -t["frequency"]
         )
         for t in feat_themes:
-            with st.container(border=True):
-                cols = st.columns([4, 1, 1])
-                cols[0].markdown(f"### {t['name']}")
-                cols[1].metric("呼声", t["frequency"])
-                cols[2].metric("紧迫度", t["severity"])
-                st.markdown(f"> {t['insight']}")
-                for q in t["representatives"]:
-                    st.caption(f"💬 {q}")
+            st.markdown(theme_card(t), unsafe_allow_html=True)
         if trends.get("opportunities"):
             st.info("**🎯 产品机会点**：" + "；".join(trends["opportunities"]))
 
@@ -275,13 +267,32 @@ if st.session_state.result:
     with tab_trend:
         emo_order = ["positive", "neutral", "negative", "angry"]
         emo_zh = {"positive": "😊 正面", "neutral": "😐 中性", "negative": "🙁 负面", "angry": "😠 愤怒"}
-        emo_df = pd.DataFrame(
-            {
-                "情绪": [emo_zh[k] for k in emo_order],
-                "条数": [sum(1 for c in classified if c["emotion"] == k) for k in emo_order],
-            }
-        ).set_index("情绪")
-        st.bar_chart(emo_df)
+        emo_counts = [sum(1 for c in classified if c["emotion"] == k) for k in emo_order]
+        emo_colors = {
+            "positive": "#34d399",
+            "neutral": "#64748b",
+            "negative": "#fbbf24",
+            "angry": "#f87171",
+        }
+        fig = px.bar(
+            x=[emo_zh[k] for k in emo_order],
+            y=emo_counts,
+            color=[emo_zh[k] for k in emo_order],
+            color_discrete_map={emo_zh[k]: emo_colors[k] for k in emo_order},
+        )
+        fig.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            showlegend=False,
+            height=340,
+            margin=dict(l=10, r=10, t=24, b=10),
+            yaxis_title=None,
+            xaxis_title=None,
+        )
+        fig.update_xaxes(gridcolor="rgba(148,163,184,.12)")
+        fig.update_yaxes(gridcolor="rgba(148,163,184,.12)")
+        st.plotly_chart(fig, use_container_width=True)
         if trends.get("hot_topics"):
             st.markdown("**🔥 热度上升话题**：" + "；".join(trends["hot_topics"]))
         if trends.get("risks"):
@@ -302,4 +313,11 @@ if st.session_state.result:
         st.divider()
         st.markdown(md)
 else:
-    st.info("👈 在侧边栏配置仓库与模型后，点击「开始抓取与分析」生成情报看板。")
+    hero("STANDBY", "等待情报采集指令", "在侧边栏完成配置后，点击「开始抓取与分析」启动分析管线")
+    stat_cards(
+        [
+            ("系统状态", "待命", "#22d3ee"),
+            ("数据源", "GitHub API", "#8b5cf6"),
+            ("分析引擎", "Ox Alpha", "#34d399"),
+        ]
+    )
