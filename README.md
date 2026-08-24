@@ -28,6 +28,18 @@ python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md
 | `OPENROUTER_MODEL` | 模型覆盖，默认 `stealth/ox-alpha` |
 | `OPENROUTER_BASE_URL` | 端点覆盖，默认 `https://openrouter.ai/api/v1` |
 
+本地运行推荐把 Key 写入项目根目录 `.env`（已被 gitignore 排除），引擎启动时自动加载。
+
+## ☁️ 部署到 Streamlit Community Cloud
+
+1. Fork 或确认本仓库在您的 GitHub 账号下（需公开仓库）
+2. 打开 https://share.streamlit.io/ → **Create app** → 选择本仓库，主模块填 `app.py`
+3. 进入 **App Settings → Secrets**，粘贴：
+   ```toml
+   OPENROUTER_API_KEY = "sk-or-v1-你的新Key"
+   ```
+4. Deploy——约 2 分钟后即可通过 `https://<用户名>-gh-pain-intel.streamlit.app` 访问
+
 ## 架构
 
 ```

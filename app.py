@@ -25,6 +25,18 @@ st.caption(
     "（只读分析，仅供内部研究）"
 )
 
+
+def _get_secret(key: str, default: str = "") -> str:
+    """读取密钥：优先 Streamlit Cloud Secrets，其次环境变量（本地 .env 由引擎自动加载）。"""
+    try:
+        val = st.secrets.get(key)
+        if val:
+            return str(val)
+    except Exception:
+        pass
+    return os.environ.get(key, default)
+
+
 # ---------------- 侧边栏配置 ----------------
 with st.sidebar:
     st.header("⚙️ 配置")
@@ -45,8 +57,8 @@ with st.sidebar:
         api_key = st.text_input(
             "OpenRouter API Key",
             type="password",
-            value=os.environ.get("OPENROUTER_API_KEY", ""),
-            placeholder="sk-or-v1-…",
+            value=_get_secret("OPENROUTER_API_KEY"),
+            placeholder="sk-or-v1-…（云端可在 App Settings → Secrets 中配置）",
         )
         temperature = st.slider("Temperature", 0.0, 1.0, 0.2)
         col_b, col_w = st.columns(2)
