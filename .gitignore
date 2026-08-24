@@ -12,6 +12,8 @@ venv/
 pain_intel_report.md
 e2e_report.md
 *-report.md
+reports/
+run.log
 
 # IDE / 系统
 .idea/
