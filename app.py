@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
+import time
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -65,7 +67,7 @@ with st.sidebar:
         )
         temperature = st.slider("Temperature", 0.0, 1.0, 0.2)
         col_b, col_w = st.columns(2)
-        batch_size = col_b.slider("批大小（条/请求）", 5, 40, 20)
+        batch_size = col_b.slider("批大小（条/请求）", 5, 30, 10)
         max_workers = col_w.slider("并发请求数", 1, 8, 4)
         st.caption("⚡ 并发批处理可大幅提升分类速度；但并发过高会触发平台限流(429)，退避重试反而变慢")
 
@@ -141,18 +143,40 @@ if run_btn:
         "trends": "趋势与情绪研判",
     }
 
-    def stage_progress(stage: str, ratio: float) -> None:
-        progress.progress(
-            min(0.25 + 0.74 * ratio, 0.999), text=f"{stage_names[stage]}… ({ratio:.0%})"
-        )
+    # ---------- 后台线程执行分析，主线程每秒心跳刷新进度 ----------
+    state = {"stage": "classify", "ratio": 0.0, "error": None, "result": None, "done": False}
 
-    try:
-        result = engine.run_pipeline(
-            issues, batch_size=batch_size, max_workers=max_workers, progress_cb=stage_progress
+    def stage_progress(stage: str, ratio: float) -> None:
+        state["stage"], state["ratio"] = stage, ratio
+
+    def worker() -> None:
+        try:
+            state["result"] = engine.run_pipeline(
+                issues, batch_size=batch_size, max_workers=max_workers, progress_cb=stage_progress
+            )
+        except Exception as exc:
+            state["error"] = exc
+        finally:
+            state["done"] = True
+
+    t = threading.Thread(target=worker, daemon=True)
+    t0 = time.time()
+    t.start()
+    while not state["done"]:
+        t.join(timeout=1.0)
+        elapsed = time.time() - t0
+        ratio = state["ratio"]
+        progress.progress(
+            min(0.25 + 0.74 * ratio, 0.999),
+            text=f"{stage_names[state['stage']]}… ({ratio:.0%}) · 已耗时 {elapsed:.0f} 秒"
+            f"（深度推理模型单批约 1-3 分钟，请耐心等待）",
         )
-    except Exception as exc:
-        st.error(f"分析失败：{exc}")
+    progress.progress(1.0, text="✅ 分析完成")
+
+    if state["error"] is not None:
+        st.error(f"分析失败：{state['error']}")
         st.stop()
+    result = state["result"]
 
     if engine.last_failures:
         st.warning(

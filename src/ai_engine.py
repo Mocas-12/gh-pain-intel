@@ -111,7 +111,7 @@ class PainIntelEngine:
         model: str = DEFAULT_MODEL,
         api_key: str | None = None,
         temperature: float = 0.2,
-        timeout: int = 240,
+        timeout: int = 150,
         max_workers: int = 4,
     ):
         self.base_url = base_url.rstrip("/")
@@ -141,7 +141,7 @@ class PainIntelEngine:
         """对话补全，内置 429/5xx 与网络抖动的指数退避重试（线程安全）。"""
         delay = 2.0
         last_exc: Exception | None = None
-        for attempt in range(4):
+        for attempt in range(3):
             try:
                 resp = requests.post(
                     f"{self.base_url}/chat/completions",
@@ -154,7 +154,7 @@ class PainIntelEngine:
                             {"role": "user", "content": user},
                         ],
                     },
-                    timeout=self.timeout,
+                    timeout=(10, self.timeout),
                 )
                 if resp.status_code == 429 or resp.status_code >= 500:
                     wait = resp.headers.get("Retry-After")
@@ -172,7 +172,7 @@ class PainIntelEngine:
                 delay *= 2
         raise RuntimeError(f"OpenRouter 请求连续失败: {last_exc}")
 
-    def chat_json(self, system: str, user: str, retries: int = 2):
+    def chat_json(self, system: str, user: str, retries: int = 1):
         last_exc: Exception | None = None
         for _ in range(retries + 1):
             try:
@@ -237,7 +237,7 @@ class PainIntelEngine:
     def classify_issues(
         self,
         issues: list,
-        batch_size: int = 20,
+        batch_size: int = 10,
         max_workers: int | None = None,
         progress_cb: Callable[[int, int], None] | None = None,
     ) -> list[dict]:
@@ -254,7 +254,7 @@ class PainIntelEngine:
 
         def work(idx: int, batch: list) -> tuple[int, list[dict]]:
             payload = "\n\n".join(
-                f"### id={i}\n{iss.flat_text[:1600]}" for i, iss in enumerate(batch)
+                f"### id={i}\n{iss.flat_text[:1000]}" for i, iss in enumerate(batch)
             )
             return idx, self._parse_classification(batch, self.chat_json(CLASSIFY_PROMPT, payload))
 
@@ -339,7 +339,7 @@ class PainIntelEngine:
     def run_pipeline(
         self,
         issues: list,
-        batch_size: int = 20,
+        batch_size: int = 10,
         max_workers: int | None = None,
         progress_cb: Callable[[str, float], None] | None = None,
     ) -> dict:
