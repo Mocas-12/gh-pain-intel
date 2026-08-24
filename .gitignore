@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# 生成的报告（运行时产物，不入库）
+pain_intel_report.md
+e2e_report.md
+*-report.md
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 环境变量文件（防泄密）
+.env
+.env.*
