@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -15,7 +15,7 @@ import streamlit as st
 
 from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
 from src.report import SEVERITY_ORDER, build_report, pct_str
-from src.scraper import GitHubClient, fetch_many
+from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 
 st.set_page_config(page_title="gh-pain-intel · 开源痛点情报看板", page_icon="🛰️", layout="wide")
 
@@ -49,7 +49,10 @@ with st.sidebar:
     max_per_repo = st.slider("每个仓库最大 Issue 数", 20, 500, 120, step=20)
     include_comments = st.checkbox("抓取热门评论作为上下文", value=True)
     github_token = st.text_input(
-        "GitHub Token（可选，提升 API 限额）", type="password", value=os.environ.get("GITHUB_TOKEN", "")
+        "GitHub Token（可选，提升 API 限额）",
+        type="password",
+        value=_get_secret("GITHUB_TOKEN"),
+        help="云端部署强烈建议配置：Streamlit 共享出口 IP 的匿名配额（60次/时）极易耗尽；配置后提升至 5000 次/小时",
     )
     with st.expander("🧠 模型设置（OpenRouter · Ox Alpha）"):
         st.caption(f"🔒 固定端点：{DEFAULT_BASE_URL}（本项目强制使用 OpenRouter）")
@@ -85,14 +88,38 @@ if run_btn:
     status = st.empty()
 
     client = GitHubClient(token=github_token or None)
-    issues, errors = fetch_many(
-        client,
-        repos,
-        days=days,
-        max_per_repo=max_per_repo,
-        include_comments=include_comments,
-        progress_cb=status.write,
-    )
+
+    # 配额可视化（/rate_limit 端点本身不消耗配额）
+    quota = client.rate_limit()
+    if quota:
+        tag = "Token 认证" if quota["authenticated"] else "匿名共享 IP"
+        reset_txt = (
+            f" · 重置于 {datetime.fromtimestamp(quota['reset'], tz=timezone.utc).astimezone():%H:%M}"
+            if quota["remaining"] < quota["limit"]
+            else ""
+        )
+        st.caption(f"📦 GitHub 配额（{tag}）：{quota['remaining']}/{quota['limit']}{reset_txt}")
+        if not quota["authenticated"] and quota["remaining"] < max_per_repo:
+            st.warning("⚠️ 匿名配额偏低。云端部署请在 Secrets 中配置 GITHUB_TOKEN（5000 次/小时）。")
+
+    try:
+        issues, errors = fetch_many(
+            client,
+            repos,
+            days=days,
+            max_per_repo=max_per_repo,
+            include_comments=include_comments,
+            progress_cb=status.write,
+        )
+    except GitHubRateLimitError as exc:
+        progress.empty()
+        st.error(f"🚫 {exc}")
+        st.info(
+            "💡 解决方法：应用右下角 **Manage app → Settings → Secrets** 添加：\n\n"
+            '```toml\nGITHUB_TOKEN = "ghp_你的PersonalAccessToken"\n```\n\n'
+            "PAT 生成地址：https://github.com/settings/tokens（无需勾选任何权限，public repo 只读即可）"
+        )
+        st.stop()
     if not issues:
         st.error("未能抓取到任何 Issue：" + "; ".join(errors))
         st.stop()

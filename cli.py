@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
 from src.report import build_report
-from src.scraper import GitHubClient, fetch_many
+from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 
 
 def main() -> None:
@@ -38,14 +38,17 @@ def main() -> None:
 
     print(f"[1/3] 抓取 {repos} 近 {args.days} 天的 Issues …")
     client = GitHubClient(token=os.environ.get("GITHUB_TOKEN"))
-    issues, errors = fetch_many(
-        client,
-        repos,
-        days=args.days,
-        max_per_repo=args.max_per_repo,
-        include_comments=not args.no_comments,
-        progress_cb=print,
-    )
+    try:
+        issues, errors = fetch_many(
+            client,
+            repos,
+            days=args.days,
+            max_per_repo=args.max_per_repo,
+            include_comments=not args.no_comments,
+            progress_cb=print,
+        )
+    except GitHubRateLimitError as exc:
+        sys.exit(f"🚫 {exc}")
     if errors:
         print("[警告] 部分仓库失败：")
         for e in errors:
