@@ -19,7 +19,7 @@ import streamlit as st
 from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
-from src.trending import day_tag, get_hot_repos, translate_descriptions
+from src.trending import get_hot_repos
 from src.ui import hero, inject, stat_cards, theme_card
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
@@ -69,28 +69,8 @@ with st.sidebar:
         if not hot_repos:
             st.caption("暂无数据")
 
-        # 中英切换：默认原文，单按钮批量翻译，结果存会话直至切回
-        if hot_repos:
-            c_head, c_btn = st.columns([3, 1])
-            c_head.caption(f"数据日期 · {day_tag()}")
-            if c_btn.button(
-                "原" if st.session_state.get("hot_zh") else "译",
-                key="btn_lang",
-                help="简介中英切换（Ox Alpha 精准翻译）",
-            ):
-                if st.session_state.get("hot_zh"):  # 当前中文 → 切回原文
-                    st.session_state["hot_zh"] = {}
-                else:  # 当前原文 → 批量翻译
-                    try:
-                        with st.spinner("翻译中…"):
-                            st.session_state["hot_zh"] = translate_descriptions(hot_repos)
-                    except Exception as exc:
-                        st.toast(f"翻译失败：{str(exc)[:80]}")
-                st.rerun()
-        zh_map = st.session_state.get("hot_zh") or {}
-
         for rank, r in enumerate(hot_repos, 1):
-            desc = zh_map.get(r["repo"]) or r.get("description") or ""
+            desc = r.get("description") or ""
             c_info, c_add = st.columns([5, 1])
             c_info.markdown(
                 f"**{rank}.** [`{r['repo']}`]({r['url']})\n\n"

@@ -13,8 +13,6 @@ from pathlib import Path
 
 import requests
 
-from .ai_engine import PainIntelEngine
-
 GITHUB_SEARCH_URL = "https://api.github.com/search/repositories"
 CACHE_DIR = Path(
     os.environ.get("PAIN_INTEL_CACHE_DIR", str(Path(__file__).resolve().parent.parent / ".cache"))
@@ -94,40 +92,3 @@ def get_hot_repos(token: str | None = None, force: bool = False, timeout: int = 
     except OSError:
         pass  # 缓存写入失败不影响本次结果返回
     return data
-
-
-def _has_cjk(text: str) -> bool:
-    """判断文本是否已包含汉字（视为中文，无需翻译）。"""
-    return any("\u4e00" <= ch <= "\u9fff" for ch in text)
-
-
-def translate_descriptions(repos: list[dict]) -> dict[str, str]:
-    """把榜单中的英文简介批量翻译为简体中文，返回 {repo: 中文简介}。
-
-    仅翻译非中文条目；一次请求完成整榜，术语保留英文原文。
-    需要 OPENROUTER_API_KEY（本地 .env 或云端 Secrets 已配置）。
-    """
-    targets = [r for r in repos if r.get("description") and not _has_cjk(r["description"])]
-    if not targets:
-        return {}
-    payload = json.dumps(
-        [{"id": i, "en": r["description"]} for i, r in enumerate(targets)], ensure_ascii=False
-    )
-    system = (
-        "你是资深技术文档译者。将输入 JSON 数组中每条开源项目的英文简介准确译为简体中文："
-        "技术术语与专有名词保留英文原文（如 API、CLI、LLM、框架或库名），"
-        "忠实原意、不遗漏、不意译、不添加解释。"
-        '严格返回 JSON 数组：[{"id": <序号>, "zh": "<译文>"}]，不要任何多余文字。'
-    )
-    data = PainIntelEngine().chat_json(system, payload)
-    out: dict[str, str] = {}
-    if isinstance(data, list):
-        for item in data:
-            try:
-                idx = int(item.get("id"))
-                zh = str(item.get("zh", "")).strip()
-                if 0 <= idx < len(targets) and zh:
-                    out[targets[idx]["repo"]] = zh
-            except (TypeError, ValueError, AttributeError):
-                continue
-    return out
