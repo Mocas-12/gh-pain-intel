@@ -1,8 +1,8 @@
-"""热门仓库榜单：每周自动更新的 GitHub 高星活跃仓库 Top 10。
+"""热门仓库榜单：每天自动更新的 GitHub 高星活跃仓库 Top 10。
 
-数据源为 GitHub Search API（独立搜索配额，本功能每周仅真实请求一次）。
-缓存策略：按 ISO 周号落盘（.cache/hot_repos_<年>-W<周>.json），
-同一自然周内重复打开应用直接读缓存，跨周自动重新拉取并清理旧文件。
+数据源为 GitHub Search API（独立搜索配额，本功能每天仅真实请求一次）。
+缓存策略：按 UTC 日期落盘（.cache/hot_repos_YYYY-MM-DD.json），
+同一天内重复打开应用直接读缓存，跨天自动重新拉取并清理旧文件。
 """
 from __future__ import annotations
 
@@ -19,10 +19,10 @@ CACHE_DIR = Path(
 )
 
 
-def week_tag(now: datetime | None = None) -> str:
-    """当前 UTC 时间对应的 ISO 周号标签，如 '2026-W35'。"""
+def day_tag(now: datetime | None = None) -> str:
+    """当前 UTC 时间对应的日期标签，如 '2026-08-24'。"""
     now = now or datetime.now(timezone.utc)
-    return now.strftime("%G-W%V")
+    return now.strftime("%Y-%m-%d")
 
 
 def parse_search_response(items: list) -> list[dict]:
@@ -46,7 +46,7 @@ def get_hot_repos(token: str | None = None, force: bool = False, timeout: int = 
 
     Raises RuntimeError 当请求失败时（由调用方决定如何降级展示）。
     """
-    tag = week_tag()
+    tag = day_tag()
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = CACHE_DIR / f"hot_repos_{tag}.json"
 
@@ -83,7 +83,7 @@ def get_hot_repos(token: str | None = None, force: bool = False, timeout: int = 
 
     try:
         cache_file.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
-        for old in CACHE_DIR.glob("hot_repos_*.json"):  # 清理历史周的缓存文件
+        for old in CACHE_DIR.glob("hot_repos_*.json"):  # 清理历史日期的缓存文件
             if old.name != cache_file.name:
                 try:
                     old.unlink()

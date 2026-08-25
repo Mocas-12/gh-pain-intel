@@ -8,17 +8,15 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.trending import parse_search_response, week_tag
+from src.trending import day_tag, parse_search_response
 
 
-class WeekTagTest(unittest.TestCase):
-    def test_known_week(self):
-        # 2026-08-24 属于 ISO 2026 年第 35 周
-        self.assertEqual(week_tag(datetime(2026, 8, 24, tzinfo=timezone.utc)), "2026-W35")
+class DayTagTest(unittest.TestCase):
+    def test_known_date(self):
+        self.assertEqual(day_tag(datetime(2026, 8, 24, tzinfo=timezone.utc)), "2026-08-24")
 
     def test_year_boundary(self):
-        # ISO 周制：2027-01-01 属于 2026 年的第 53 周
-        self.assertEqual(week_tag(datetime(2027, 1, 1, tzinfo=timezone.utc)), "2026-W53")
+        self.assertEqual(day_tag(datetime(2027, 1, 1, tzinfo=timezone.utc)), "2027-01-01")
 
 
 class ParseSearchResponseTest(unittest.TestCase):

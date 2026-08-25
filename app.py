@@ -53,8 +53,8 @@ with st.sidebar:
         key="repos_box",
     )
 
-    # ----- 本周热门仓库 Top 10（每周自动更新，一键追加） -----
-    with st.expander("🔥 热门仓库 Top 10 · 每周更新"):
+    # ----- 今日热门仓库 Top 10（每天自动更新，一键追加） -----
+    with st.expander("🔥 热门仓库 Top 10 · 每日更新"):
         try:
 
             @st.cache_data(ttl=21600, show_spinner=False)
