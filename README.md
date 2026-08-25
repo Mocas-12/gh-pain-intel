@@ -33,7 +33,7 @@ python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md
 ## ☁️ 在线访问
 
 云端版已部署于 Streamlit Community Cloud：
-**https://mocas-12-gh-pain-intel.streamlit.app**
+**https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/**
 
 > 云端凭据通过 Streamlit Secrets 服务端注入，访客无需（也无法）看到；
 > 请勿将包含敏感数据的 App 链接公开传播。

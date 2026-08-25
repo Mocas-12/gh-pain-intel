@@ -61,7 +61,7 @@ with st.sidebar:
             def _load_hot(t: str | None):
                 return get_hot_repos(t)
 
-            hot_repos = _load_hot(github_token or None)
+            hot_repos = _load_hot(_get_secret("GITHUB_TOKEN"))
         except Exception as exc:
             st.caption(f"⚠️ 榜单暂时不可用：{exc}")
             hot_repos = []
