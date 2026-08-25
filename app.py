@@ -19,6 +19,7 @@ import streamlit as st
 from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
+from src.trending import get_hot_repos
 from src.ui import hero, inject, stat_cards, theme_card
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
@@ -49,7 +50,41 @@ with st.sidebar:
         "目标仓库（每行一个 owner/repo）",
         "ollama/ollama\nlangchain-ai/langchain",
         height=110,
+        key="repos_box",
     )
+
+    # ----- 本周热门仓库 Top 10（每周自动更新，一键追加） -----
+    with st.expander("🔥 热门仓库 Top 10 · 每周更新"):
+        try:
+
+            @st.cache_data(ttl=21600, show_spinner=False)
+            def _load_hot(t: str | None):
+                return get_hot_repos(t)
+
+            hot_repos = _load_hot(github_token or None)
+        except Exception as exc:
+            st.caption(f"⚠️ 榜单暂时不可用：{exc}")
+            hot_repos = []
+
+        if not hot_repos:
+            st.caption("暂无数据")
+        for rank, r in enumerate(hot_repos, 1):
+            c_info, c_add = st.columns([5, 1])
+            c_info.markdown(
+                f"**{rank}.** [`{r['repo']}`]({r['url']})\n\n"
+                f"<small>⭐ {r['stars']:,} · {r['language']}</small>",
+                unsafe_allow_html=True,
+            )
+            if r["description"]:
+                c_info.caption(r["description"][:42] + ("…" if len(r["description"]) > 42 else ""))
+
+            def _add_repo(repo: str = r["repo"]) -> None:
+                lines = [x.strip() for x in st.session_state.get("repos_box", "").splitlines() if x.strip()]
+                if repo not in lines:
+                    lines.append(repo)
+                st.session_state.repos_box = "\n".join(lines)
+
+            c_add.button("➕", key=f"add_{r['repo']}", on_click=_add_repo, help=f"添加 {r['repo']} 到目标列表")
     days = st.slider("时间窗口（天）", 1, 30, 7)
     max_per_repo = st.slider("每个仓库最大 Issue 数", 20, 500, 120, step=20)
     include_comments = st.checkbox("抓取热门评论作为上下文", value=True)
