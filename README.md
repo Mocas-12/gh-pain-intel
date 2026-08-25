@@ -30,15 +30,13 @@ python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md
 
 本地运行推荐把 Key 写入项目根目录 `.env`（已被 gitignore 排除），引擎启动时自动加载。
 
-## ☁️ 部署到 Streamlit Community Cloud
+## ☁️ 在线访问
 
-1. Fork 或确认本仓库在您的 GitHub 账号下（需公开仓库）
-2. 打开 https://share.streamlit.io/ → **Create app** → 选择本仓库，主模块填 `app.py`
-3. 进入 **App Settings → Secrets**，粘贴：
-   ```toml
-   OPENROUTER_API_KEY = "sk-or-v1-你的新Key"
-   ```
-4. Deploy——约 2 分钟后即可通过 `https://<用户名>-gh-pain-intel.streamlit.app` 访问
+云端版已部署于 Streamlit Community Cloud：
+**https://mocas-12-gh-pain-intel.streamlit.app**
+
+> 云端凭据通过 Streamlit Secrets 服务端注入，访客无需（也无法）看到；
+> 请勿将包含敏感数据的 App 链接公开传播。
 
 ## 架构
 
