@@ -23,12 +23,38 @@ python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md
 
 | 变量 | 说明 |
 |---|---|
-| `GITHUB_TOKEN` | GitHub PAT，配额从 60 次/小时 提升至 5000 次/小时 |
+| `GITHUB_TOKEN` | GitHub PAT，配额从 60 次/小时 提升至 5000 次/小时（[创建教程见下](#-如何创建-github_token)） |
 | `OPENROUTER_API_KEY` | **必填**，OpenRouter API Key（https://openrouter.ai/keys） |
 | `OPENROUTER_MODEL` | 模型覆盖，默认 `stealth/ox-alpha` |
 | `OPENROUTER_BASE_URL` | 端点覆盖，默认 `https://openrouter.ai/api/v1` |
 
 本地运行推荐把 Key 写入项目根目录 `.env`（已被 gitignore 排除），引擎启动时自动加载。
+
+## 🔑 如何创建 GITHUB_TOKEN
+
+> 不配置也能用，但匿名配额仅 **60 次/小时** 且按 IP 共享（云端部署极易耗尽）；
+> 配置后提升至 **5000 次/小时**。整个过程约 1 分钟。
+
+1. 登录 GitHub → 打开 **https://github.com/settings/tokens**
+2. 点击 **「Generate new token」→「Generate new token (classic)」**
+3. 填写两项即可：
+   - **Note**：随便起名，如 `gh-pain-intel`
+   - **Expiration**：有效期，建议 `90 days` 或 `No expiration`
+4. ⬇️ **权限 scopes 一项都不用勾选**——本工具只读公开数据
+5. 点击页面底部绿色按钮 **「Generate token」**
+6. **立即复制**页面显示的 Token（`ghp_` 开头，只显示这一次！）
+7. 写入配置（二选一）：
+   - 本地：项目根目录 `.env` 文件中加一行
+     ```ini
+     GITHUB_TOKEN=***
+     ```
+   - 云端：应用右下角 **Manage app → Settings → Secrets** 中添加
+     ```toml
+     GITHUB_TOKEN = "ghp_你的token"
+     ```
+
+> ✅ 安全说明：该 Token 只能读取你账号可见的公开数据，无法写入或修改任何仓库；
+> 泄露了也只需回到同一页面点 Delete 重新生成一个。
 
 ## ☁️ 在线访问
 
