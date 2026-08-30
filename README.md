@@ -68,9 +68,21 @@ python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md
 
 ```
 src/scraper.py    抓取层：REST API + 限流退避(Retry-After) + PR过滤 + 热度排序 + 评论上下文
+src/trending.py   热榜层：解析 GitHub 官方 Trending 页的“stars today”，输出每日 Star 增幅 Top10（UTC 日缓存，不耗 API 配额）
 src/ai_engine.py  分析层：逐条分类(类别/痛感/情绪) → 两阶段语义聚类 → 趋势研判（强制JSON+重试）
 src/report.py     报告层：三大板块 Markdown 装配（数字全部本地实算，可复核）
 app.py            Streamlit 看板（指标卡 / 三板块Tab / 一键下载报告）
 cli.py            无头批处理入口
 tests/            离线单元测试：python -m unittest discover -s tests -v
 ```
+
+## 🔥 每日 Star 增幅榜
+
+侧边栏「今日 Star 增幅 Top 10」展示的是 GitHub 官方 Trending 统计的**最近一天新增
+星标数**（`stars today`），并按增幅数值降序排列——不是总星数排行，榜单每天都会换血，
+适合发现正在爆发的新仓库。
+
+- 数据源：https://github.com/trending?since=daily （页面抓取，不消耗 GitHub API 配额，无需 Token）
+- 刷新节奏：按 UTC 日期缓存，每天首次打开应用时抓取一次
+- 已知边界：数据来自 GitHub 官方页面 HTML，若页面结构调整，榜单会显示“暂时不可用”而不影响其他功能
+

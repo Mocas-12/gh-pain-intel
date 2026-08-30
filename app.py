@@ -19,7 +19,7 @@ import streamlit as st
 from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
-from src.trending import get_hot_repos
+from src.trending import get_star_gainers
 from src.ui import hero, inject, stat_cards, theme_card
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
@@ -53,15 +53,15 @@ with st.sidebar:
         key="repos_box",
     )
 
-    # ----- 今日热门仓库 Top 10（每天自动更新，一键追加） -----
-    with st.expander("🔥 热门仓库 Top 10 · 每日更新"):
+    # ----- 每日 Star 增幅 Top 10（GitHub Trending 官方数据，每天自动更新，一键追加） -----
+    with st.expander("🔥 今日 Star 增幅 Top 10 · 每日更新"):
         try:
 
             @st.cache_data(ttl=21600, show_spinner=False)
-            def _load_hot(t: str | None):
-                return get_hot_repos(t)
+            def _load_hot():
+                return get_star_gainers()
 
-            hot_repos = _load_hot(_get_secret("GITHUB_TOKEN"))
+            hot_repos = _load_hot()
         except Exception as exc:
             st.caption(f"⚠️ 榜单暂时不可用：{exc}")
             hot_repos = []
@@ -74,7 +74,7 @@ with st.sidebar:
             c_info, c_add = st.columns([5, 1])
             c_info.markdown(
                 f"**{rank}.** [`{r['repo']}`]({r['url']})\n\n"
-                f"<small>⭐ {r['stars']:,} · {r['language']}</small>",
+                f"<small>📈 +{r['gained']:,} ⭐ 今日 · 全站 {r['stars']:,} · {r['language']}</small>",
                 unsafe_allow_html=True,
             )
             if desc:
