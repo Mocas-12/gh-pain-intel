@@ -2,6 +2,7 @@
 
 示例：
     python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md
+    python cli.py --provider gemini --repos ollama/ollama --days 7 --out report.md
 """
 from __future__ import annotations
 
@@ -12,7 +13,8 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
+from src.ai_engine import PainIntelEngine
+from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 from src.report import build_report
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 
@@ -25,9 +27,15 @@ def main() -> None:
     ap.add_argument("--no-comments", action="store_true", help="不抓取评论上下文")
     ap.add_argument("--batch-size", type=int, default=10, help="每次模型请求包含的 Issue 数")
     ap.add_argument("--max-workers", type=int, default=4, help="分类阶段并发请求数（上限8）")
-    ap.add_argument("--base-url", default=os.environ.get("OPENROUTER_BASE_URL", DEFAULT_BASE_URL))
-    ap.add_argument("--model", default=os.environ.get("OPENROUTER_MODEL", DEFAULT_MODEL))
-    ap.add_argument("--api-key", default=os.environ.get("OPENROUTER_API_KEY"))
+    ap.add_argument(
+        "--provider",
+        default=os.environ.get("LLM_PROVIDER", DEFAULT_PROVIDER),
+        choices=sorted(PROVIDERS),
+        help=f"模型服务商，默认 {DEFAULT_PROVIDER}；可选: {', '.join(sorted(PROVIDERS))}",
+    )
+    ap.add_argument("--base-url", default=None, help="覆盖服务商预设端点（OpenAI 兼容）")
+    ap.add_argument("--model", default=None, help="覆盖服务商预设模型")
+    ap.add_argument("--api-key", default=None, help="覆盖服务商预设 Key 环境变量")
     ap.add_argument(
         "--out-dir",
         default=None,
@@ -36,8 +44,33 @@ def main() -> None:
     ap.add_argument("--out", default="pain_intel_report.md")
     args = ap.parse_args()
 
-    if not args.api_key:
-        sys.exit("缺少 OpenRouter API Key：请设置环境变量 OPENROUTER_API_KEY 或用 --api-key 传入。")
+    # 解析服务商预设：显式参数 > 服务商专属环境变量 > 通用环境变量 > 预设默认值
+    preset = PROVIDERS[args.provider]
+    if args.provider == "openrouter":  # 兼容历史环境变量
+        env_base = os.environ.get("OPENROUTER_BASE_URL")
+        env_model = os.environ.get("OPENROUTER_MODEL")
+        env_key = os.environ.get("OPENROUTER_API_KEY")
+    else:
+        env_base = env_model = None
+        env_key = os.environ.get(preset["key_env"]) if preset["key_env"] else None
+
+    base_url = args.base_url or env_base or preset["base_url"]
+    model = args.model or env_model or (preset["models"][0] if preset["models"] else "")
+    api_key = args.api_key or env_key or os.environ.get("LLM_API_KEY") or ""
+    if not api_key and preset["key_env"] is None:
+        api_key = "ollama"  # 免鉴权服务商（本地 Ollama）的占位 Bearer
+    if args.provider == "custom" and not api_key:
+        api_key = "none"  # 免鉴权自定义端点的占位 Bearer
+
+    if not base_url:
+        sys.exit("缺少 API 端点：请用 --base-url 传入 OpenAI 兼容的 base_url。")
+    if not model:
+        sys.exit("缺少模型名：请用 --model 传入。")
+    if not api_key:
+        sys.exit(
+            f"缺少 API Key：请设置环境变量 {preset['key_env']}（或通用 LLM_API_KEY），"
+            f"或用 --api-key 传入。获取地址：{preset['key_url']}"
+        )
 
     repos = [r.strip() for r in args.repos.split(",") if r.strip()]
 
@@ -61,8 +94,8 @@ def main() -> None:
     if not issues:
         sys.exit("未抓取到任何 Issue，退出。")
 
-    print(f"[2/3] 共 {len(issues)} 条样本，调用模型 {args.model} @ {args.base_url} …")
-    engine = PainIntelEngine(args.base_url, args.model, args.api_key, max_workers=args.max_workers)
+    print(f"[2/3] 共 {len(issues)} 条样本，调用模型 {model} @ {base_url} …")
+    engine = PainIntelEngine(base_url, model, api_key, max_workers=args.max_workers)
     result = engine.run_pipeline(
         issues, batch_size=args.batch_size, max_workers=args.max_workers,
         progress_cb=lambda s, r: print(f"  {s}: {r:.0%}"),
@@ -72,7 +105,7 @@ def main() -> None:
         "repos": repos,
         "days": args.days,
         "total": len(issues),
-        "model": args.model,
+        "model": model,
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
     md = build_report(meta, result)

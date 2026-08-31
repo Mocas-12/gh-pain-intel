@@ -16,7 +16,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from src.ai_engine import DEFAULT_BASE_URL, DEFAULT_MODEL, PainIntelEngine
+from src.ai_engine import PainIntelEngine
+from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 from src.trending import get_star_gainers
@@ -28,7 +29,7 @@ inject()
 hero(
     "LIVE INTEL · OX ALPHA",
     "开源社区痛点情报中心",
-    "GitHub Issue 监控 → Ox Alpha 深度语义分析 → 一键导出市场研究报告（只读 · 内部研究用途）",
+    "GitHub Issue 监控 → 多模型深度语义分析 → 一键导出市场研究报告（只读 · 内部研究用途）",
 )
 
 
@@ -96,15 +97,63 @@ with st.sidebar:
         value=_get_secret("GITHUB_TOKEN"),
         help="云端部署强烈建议配置：Streamlit 共享出口 IP 的匿名配额（60次/时）极易耗尽；配置后提升至 5000 次/小时",
     )
-    with st.expander("🧠 模型设置（OpenRouter · Ox Alpha）"):
-        st.caption(f"🔒 固定端点：{DEFAULT_BASE_URL}（本项目强制使用 OpenRouter）")
-        model = st.text_input("模型名称", DEFAULT_MODEL)
-        api_key = st.text_input(
-            "OpenRouter API Key",
-            type="password",
-            value=_get_secret("OPENROUTER_API_KEY"),
-            placeholder="sk-or-v1-…（云端可在 App Settings → Secrets 中配置）",
+    with st.expander("🧠 模型设置（多服务商可切换）"):
+
+        def _sync_provider() -> None:
+            """切换服务商时，自动带出该服务商的官方端点与默认模型。"""
+            p = PROVIDERS[st.session_state["llm_provider"]]
+            st.session_state["llm_base_url"] = p["base_url"]
+            if p["models"]:
+                st.session_state["llm_model"] = p["models"][0]
+
+        provider_id = st.selectbox(
+            "服务商",
+            list(PROVIDERS),
+            format_func=lambda k: PROVIDERS[k]["label"],
+            key="llm_provider",
+            on_change=_sync_provider,
         )
+        preset = PROVIDERS[provider_id]
+
+        base_url = st.text_input(
+            "API 端点（OpenAI 兼容）",
+            value=preset["base_url"],
+            key="llm_base_url",
+            help="分析层兼容 OpenAI Chat Completions 协议；切换服务商自动带出官方端点，也可手动修改",
+        )
+
+        if preset["models"]:
+            model_choice = st.selectbox(
+                "模型", preset["models"] + ["✏️ 其他（手动输入）"], key="llm_model"
+            )
+            model = (
+                st.text_input("自定义模型名称", key="llm_model_custom")
+                if model_choice == "✏️ 其他（手动输入）"
+                else model_choice
+            )
+        else:
+            model = st.text_input("模型名称", key="llm_model_custom")
+
+        if preset["key_env"] is None:  # 目前仅本地 Ollama 免鉴权
+            api_key = "ollama"  # 占位 Bearer，引擎要求非空
+            st.caption("🏠 当前服务商无需 API Key")
+        else:
+            key_help = (
+                f"获取地址：{preset['key_url']}；云端可在 Secrets 配置 {preset['key_env']}，选中该服务商后自动带入"
+                if preset["key_url"]
+                else "可选，仅当你的端点需要鉴权时填写"
+            )
+            api_key = st.text_input(
+                f"{preset['short']} API Key",
+                type="password",
+                value=_get_secret(preset["key_env"]),
+                placeholder=preset["key_hint"] or "选填",
+                help=key_help,
+            )
+
+        if preset.get("note"):
+            st.caption(f"ℹ️ {preset['note']}")
+
         temperature = st.slider("Temperature", 0.0, 1.0, 0.2)
         col_b, col_w = st.columns(2)
         batch_size = col_b.slider("批大小（条/请求）", 5, 30, 10)
@@ -122,9 +171,18 @@ if run_btn:
     if not repos:
         st.error("请至少填写一个 owner/repo 格式的仓库")
         st.stop()
-    if not (api_key or "").strip():
-        st.error("请先在侧边栏填写 OpenRouter API Key（或设置环境变量 OPENROUTER_API_KEY）。")
+    if not base_url.strip():
+        st.error("请先在侧边栏填写 API 端点（base_url）")
         st.stop()
+    if not (model or "").strip():
+        st.error("请先在侧边栏选择或填写模型名称")
+        st.stop()
+    if not (api_key or "").strip():
+        if provider_id == "custom":
+            api_key = "none"  # 免鉴权端点的占位 Bearer；需鉴权的端点会收到 401 并提示
+        else:
+            st.error("请先在侧边栏填写当前服务商的 API Key（或设置对应环境变量）。")
+            st.stop()
 
     progress = st.progress(0.0, text="准备中…")
     status = st.empty()
@@ -166,14 +224,14 @@ if run_btn:
         st.error("未能抓取到任何 Issue：" + "; ".join(errors))
         st.stop()
 
-    progress.progress(0.25, text=f"已抓取 {len(issues)} 条 Issue，正在连接 OpenRouter…")
+    progress.progress(0.25, text=f"已抓取 {len(issues)} 条 Issue，正在连接模型端点…")
     engine = PainIntelEngine(
-        DEFAULT_BASE_URL, model, api_key.strip(), temperature, max_workers=max_workers
+        base_url.strip(), model.strip(), api_key.strip(), temperature, max_workers=max_workers
     )
     if not engine.health_check():
         st.error(
-            f"无法连接 OpenRouter（{DEFAULT_BASE_URL}）或 API Key 无效。"
-            f"请检查网络与 Key（管理地址：https://openrouter.ai/keys）。"
+            f"无法连接模型端点（{base_url}）或 API Key / 模型名无效。"
+            f"请检查网络与配置（Key 管理：{preset['key_url'] or '服务商控制台'}）。"
         )
         st.stop()
 
@@ -351,10 +409,13 @@ if st.session_state.result:
         st.markdown(md)
 else:
     hero("STANDBY", "等待情报采集指令", "在侧边栏完成配置后，点击「开始抓取与分析」启动分析管线")
+    current_provider = PROVIDERS.get(
+        st.session_state.get("llm_provider", DEFAULT_PROVIDER), {}
+    ).get("short", "Ox Alpha")
     stat_cards(
         [
             ("系统状态", "待命", "#22d3ee"),
             ("数据源", "GitHub API", "#8b5cf6"),
-            ("分析引擎", "Ox Alpha", "#34d399"),
+            ("分析引擎", current_provider, "#34d399"),
         ]
     )

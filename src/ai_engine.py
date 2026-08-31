@@ -1,4 +1,4 @@
-"""AI 分析层：强制经 OpenRouter API 调用 Ox Alpha 模型，完成：
+"""AI 分析层：调用任意 OpenAI Chat Completions 兼容端点的大模型，完成：
 
 1. 逐条语义清洗与分类（bug/feature/question/doc/other + 痛感分级 + 情绪标注）
 2. 两阶段语义聚类：分批归纳主题 → 全局合并去重
@@ -6,7 +6,9 @@
 
 性能设计：分类阶段使用线程池并发请求多个批次（I/O 密集场景），
 传输层内置 429/5xx 指数退避；失败批次自动兜底，不中断整体管线。
-API Key 从环境变量 OPENROUTER_API_KEY 读取，或由调用方显式传入。
+默认服务商为 OpenRouter（Ox Alpha），可通过传入 base_url/model 切换为
+OpenAI、Gemini、DeepSeek 等任意兼容端点（预设见 src/llm_providers.py）。
+API Key 按优先级读取：调用方显式传入 → 环境变量 LLM_API_KEY → OPENROUTER_API_KEY。
 """
 from __future__ import annotations
 
@@ -20,7 +22,7 @@ from typing import Callable
 
 import requests
 
-# 本项目强制通过 OpenRouter 调用 Ox Alpha
+# 默认服务商：OpenRouter · Ox Alpha（可在调用时被 base_url/model 参数覆盖）
 DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "stealth/ox-alpha"
 DEFAULT_API_KEY_ENV = "OPENROUTER_API_KEY"
@@ -103,7 +105,7 @@ def _chunk(seq: list, size: int):
 
 
 class PainIntelEngine:
-    """面向痛点情报的分析管线（OpenRouter · Ox Alpha，并发批处理）。"""
+    """面向痛点情报的分析管线（任意 OpenAI 兼容端点，并发批处理）。"""
 
     def __init__(
         self,
@@ -116,7 +118,11 @@ class PainIntelEngine:
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model
-        self.api_key = api_key or os.environ.get(DEFAULT_API_KEY_ENV, "")
+        self.api_key = (
+            api_key
+            or os.environ.get("LLM_API_KEY", "")
+            or os.environ.get(DEFAULT_API_KEY_ENV, "")
+        )
         self.temperature = temperature
         self.timeout = timeout
         # 并发上限保护：过高会触发平台限流（429），反而更慢
@@ -124,18 +130,18 @@ class PainIntelEngine:
         self.last_failures: list[str] = []  # 最近一次分类中降级失败的批次信息
         if not self.api_key:
             raise ValueError(
-                f"缺少 OpenRouter API Key：请设置环境变量 {DEFAULT_API_KEY_ENV} "
-                f"或在界面中填入（获取地址：https://openrouter.ai/keys）"
+                "缺少 API Key：请在界面中填入当前服务商的 Key，"
+                "或设置环境变量 LLM_API_KEY / OPENROUTER_API_KEY"
             )
 
     # ---------- 底层传输 ----------
     def _headers(self) -> dict:
-        """OpenRouter 鉴权头 + 站点归因头（归因头可选但推荐）。"""
-        return {
-            "Authorization": f"Bearer {self.api_key}",
-            "HTTP-Referer": "https://localhost/gh-pain-intel",
-            "X-Title": "gh-pain-intel",
-        }
+        """Bearer 鉴权头；OpenRouter 归因头仅对该站发送（其余服务商不识别，无需发送）。"""
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        if "openrouter" in self.base_url.lower():
+            headers["HTTP-Referer"] = "https://localhost/gh-pain-intel"
+            headers["X-Title"] = "gh-pain-intel"
+        return headers
 
     def chat(self, system: str, user: str) -> str:
         """对话补全，内置 429/5xx 与网络抖动的指数退避重试（线程安全）。"""
@@ -170,7 +176,7 @@ class PainIntelEngine:
                     raise
                 time.sleep(delay)
                 delay *= 2
-        raise RuntimeError(f"OpenRouter 请求连续失败: {last_exc}")
+        raise RuntimeError(f"模型请求连续失败: {last_exc}")
 
     def chat_json(self, system: str, user: str, retries: int = 1):
         last_exc: Exception | None = None
@@ -183,15 +189,37 @@ class PainIntelEngine:
         raise RuntimeError(f"JSON 解析连续失败: {last_exc}")
 
     def health_check(self) -> bool:
-        """连通性 + Key 有效性快速校验（/auth/key 异常时退回 /models 探测）。"""
+        """连通性 + Key 有效性快速校验（不消耗模型 tokens，探测失败时退回最小对话）。"""
         try:
-            resp = requests.get(f"{self.base_url}/auth/key", headers=self._headers(), timeout=10)
-            if resp.status_code == 200:
-                return True
-            if resp.status_code == 401:
-                return False
+            if "openrouter" in self.base_url.lower():
+                resp = requests.get(f"{self.base_url}/auth/key", headers=self._headers(), timeout=10)
+                if resp.status_code == 200:
+                    return True
+                if resp.status_code == 401:
+                    return False
             models = requests.get(f"{self.base_url}/models", headers=self._headers(), timeout=10)
-            return models.status_code == 200
+            if models.status_code == 200:
+                return True
+            if models.status_code in (401, 403):
+                return False
+            return self._ping_chat()  # 少数兼容端点未实现 /models，用最小对话兜底探测
+        except requests.RequestException:
+            return False
+
+    def _ping_chat(self) -> bool:
+        """发送 max_tokens=1 的最小对话验证端点真正可用（个别服务商才会走到这里）。"""
+        try:
+            resp = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self._headers(),
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": "ping"}],
+                    "max_tokens": 1,
+                },
+                timeout=(10, 30),
+            )
+            return resp.status_code == 200
         except requests.RequestException:
             return False
 
