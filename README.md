@@ -113,9 +113,9 @@ tests/            离线单元测试：python -m unittest discover -s tests -v
 
 ## 🔥 每日 Star 增幅榜
 
-侧边栏「今日 Star 增幅 Top 10」展示的是 GitHub 官方 Trending 统计的**最近一天新增
-星标数**（`stars today`），并按增幅数值降序排列——不是总星数排行，榜单每天都会换血，
-适合发现正在爆发的新仓库。
+主页顶部的「🔥 今日 STAR 增幅 TOP 10」卡片栅格（默认展开）展示 GitHub 官方 Trending
+统计的**最近一天新增星标数**（`stars today`），并按增幅数值降序排列——不是总星数排行，
+榜单每天都会换血，适合发现正在爆发的新仓库。点击卡片上的 ➕ 可一键把仓库加入分析目标。
 
 - 数据源：https://github.com/trending?since=daily （页面抓取，不消耗 GitHub API 配额，无需 Token）
 - 刷新节奏：按 UTC 日期缓存，每天首次打开应用时抓取一次

@@ -113,6 +113,47 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
   border-left:2px solid var(--ac,#22d3ee); padding-left:.75em; }
 .quote { color:var(--sub); font-size:.84rem; margin-top:.3rem; padding-left:1em; }
 
+/* ---------- Star 增幅榜 ---------- */
+.section-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  margin:.15rem 0 .6rem; }
+.section-title {
+  font-size:1.28rem; font-weight:900; letter-spacing:.03em;
+  background:linear-gradient(92deg,#fbbf24 0%,#f8fafc 55%,#67e8f9 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.section-sub { color:var(--sub); font-size:.78rem; letter-spacing:.06em; }
+.gain-card {
+  position:relative; overflow:hidden; height:100%;
+  background:linear-gradient(180deg,var(--panel2) 0%,rgba(17,22,31,.5) 100%);
+  border:1px solid var(--line); border-radius:14px;
+  padding:12px 14px 11px 60px;
+  transition:transform .18s ease, border-color .18s ease;
+}
+.gain-card:hover { transform:translateY(-2px); border-color:rgba(148,163,184,.32); }
+.gain-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--rc,#22d3ee); box-shadow:0 0 12px var(--rc,#22d3ee);
+}
+.gain-rank {
+  position:absolute; left:16px; top:50%; transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:700;
+  color:var(--rc,#22d3ee); text-shadow:0 0 14px var(--rc,#22d3ee);
+}
+.gain-name {
+  font-size:1.02rem; font-weight:700; color:#f1f5f9;
+  text-decoration:none; word-break:break-all;
+}
+.gain-name:hover { color:#67e8f9; }
+.gain-meta {
+  margin-top:4px; font-family:'JetBrains Mono',monospace;
+  font-size:12px; color:var(--sub);
+}
+.gain-meta b { color:#34d399; font-weight:700; font-size:13px; }
+.gain-desc {
+  margin-top:4px; color:var(--sub); font-size:.84rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
 /* ---------- Tab 胶囊化 ---------- */
 .stTabs [data-baseweb="tab-list"] { gap:6px; background:transparent; }
 .stTabs [data-baseweb="tab"] {
@@ -170,6 +211,35 @@ def stat_cards(items: list[tuple[str, str, str]]) -> None:
         for label, value, color in items
     )
     st.markdown(f'<div class="stat-grid">{cells}</div>', unsafe_allow_html=True)
+
+
+def section_head(title: str, sub: str = "") -> None:
+    """区块标题：渐变大字 + 灰色说明。"""
+    sub_html = f'<span class="section-sub">{_html.escape(sub)}</span>' if sub else ""
+    st.markdown(
+        '<div class="section-head">'
+        f'<span class="section-title">{_html.escape(title)}</span>{sub_html}'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def gain_card(item: dict, rank: int) -> str:
+    """Star 增幅榜单卡 HTML。rank 1-3 有金银铜强调色，其余为青色。"""
+    esc = _html.escape
+    rank_color = {1: "#fbbf24", 2: "#e2e8f0", 3: "#fb923c"}.get(rank, "#22d3ee")
+    desc = (item.get("description") or "").strip()
+    return (
+        f'<div class="gain-card" style="--rc:{rank_color}">'
+        f'<div class="gain-rank">{rank:02d}</div>'
+        f'<a class="gain-name" href="{esc(item.get("url", "#"))}" target="_blank">'
+        f'{esc(item.get("repo", "?"))}</a>'
+        f'<div class="gain-meta"><b>+{int(item.get("gained", 0)):,}</b> ⭐ 今日'
+        f' · 全站 {int(item.get("stars", 0)):,}'
+        f' · {esc(item.get("language") or "-")}</div>'
+        + (f'<div class="gain-desc">{esc(desc)}</div>' if desc else "")
+        + "</div>"
+    )
 
 
 def theme_card(theme: dict) -> str:

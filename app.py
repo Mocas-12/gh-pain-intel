@@ -21,7 +21,7 @@ from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 from src.trending import get_star_gainers
-from src.ui import hero, inject, stat_cards, theme_card
+from src.ui import gain_card, hero, inject, section_head, stat_cards, theme_card
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
 inject()
@@ -31,6 +31,52 @@ hero(
     "开源社区痛点情报中心",
     "GitHub Issue 监控 → 多模型深度语义分析 → 一键导出市场研究报告（只读 · 内部研究用途）",
 )
+
+
+def _add_repo(repo: str) -> None:
+    """把仓库追加到侧边栏目标列表（去重）。"""
+    lines = [x.strip() for x in st.session_state.get("repos_box", "").splitlines() if x.strip()]
+    if repo not in lines:
+        lines.append(repo)
+    st.session_state.repos_box = "\n".join(lines)
+
+
+# ---------------- 每日 Star 增幅榜（主页顶部 · 每日更新） ----------------
+try:
+
+    @st.cache_data(ttl=21600, show_spinner=False)
+    def _load_hot():
+        return get_star_gainers()
+
+    hot_repos = _load_hot()
+except Exception as exc:
+    st.caption(f"⚠️ 榜单暂时不可用：{exc}")
+    hot_repos = []
+
+section_head(
+    "🔥 今日 STAR 增幅 TOP 10",
+    "GitHub 官方 Trending · 最近一天新增星标 · 每日更新",
+)
+
+if hot_repos:
+    for start in range(0, len(hot_repos), 2):  # 两列卡片栅格，按名次左右、自上而下排列
+        pair = hot_repos[start : start + 2]
+        cells = st.columns(2, gap="small")
+        for cell, (rank, r) in zip(cells, enumerate(pair, start=start + 1)):
+            info, add = cell.columns([14, 1], vertical_alignment="center")
+            info.markdown(gain_card(r, rank), unsafe_allow_html=True)
+            add.button(
+                "➕",
+                key=f"add_{r['repo']}",
+                on_click=_add_repo,
+                args=(r["repo"],),
+                help=f"添加 {r['repo']} 到目标列表",
+                use_container_width=True,
+            )
+else:
+    st.info("榜单暂无数据：数据源为 GitHub 官方 Trending 页面，稍后刷新页面重试")
+
+st.divider()
 
 
 def _get_secret(key: str, default: str = "") -> str:
@@ -54,40 +100,6 @@ with st.sidebar:
         key="repos_box",
     )
 
-    # ----- 每日 Star 增幅 Top 10（GitHub Trending 官方数据，每天自动更新，一键追加） -----
-    with st.expander("🔥 今日 Star 增幅 Top 10 · 每日更新"):
-        try:
-
-            @st.cache_data(ttl=21600, show_spinner=False)
-            def _load_hot():
-                return get_star_gainers()
-
-            hot_repos = _load_hot()
-        except Exception as exc:
-            st.caption(f"⚠️ 榜单暂时不可用：{exc}")
-            hot_repos = []
-
-        if not hot_repos:
-            st.caption("暂无数据")
-
-        for rank, r in enumerate(hot_repos, 1):
-            desc = r.get("description") or ""
-            c_info, c_add = st.columns([5, 1])
-            c_info.markdown(
-                f"**{rank}.** [`{r['repo']}`]({r['url']})\n\n"
-                f"<small>📈 +{r['gained']:,} ⭐ 今日 · 全站 {r['stars']:,} · {r['language']}</small>",
-                unsafe_allow_html=True,
-            )
-            if desc:
-                c_info.caption(desc[:52] + ("…" if len(desc) > 52 else ""))
-
-            def _add_repo(repo: str = r["repo"]) -> None:
-                lines = [x.strip() for x in st.session_state.get("repos_box", "").splitlines() if x.strip()]
-                if repo not in lines:
-                    lines.append(repo)
-                st.session_state.repos_box = "\n".join(lines)
-
-            c_add.button("➕", key=f"add_{r['repo']}", on_click=_add_repo, help=f"添加 {r['repo']} 到目标列表")
     days = st.slider("时间窗口（天）", 1, 30, 7)
     max_per_repo = st.slider("每个仓库最大 Issue 数", 20, 500, 120, step=20)
     include_comments = st.checkbox("抓取热门评论作为上下文", value=True)
