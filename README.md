@@ -2,122 +2,126 @@
 
 <img src="assets/logo.svg" width="96" alt="gh-pain-intel Logo" />
 
-# 🛰️ gh-pain-intel · 开源社区痛点情报中心
+# 🛰️ gh-pain-intel · Open-Source Community Pain-Point Intelligence
 
-**监控 GitHub Issue 痛点 → 大模型深度语义分析 → 一键导出市场研究报告**
+**Monitor GitHub issue pain points → deep LLM semantic analysis → export market research reports in one click**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.36+-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
-[![Multi-LLM](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?logo=openai&logoColor=white)](#-多模型切换)
-[![GitHub API](https://img.shields.io/badge/Data-GitHub_Trending-181717?logo=github&logoColor=white)](#-每日-star-增幅榜)
+[![Multi-LLM](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?logo=openai&logoColor=white)](#-multi-llm-switching)
+[![GitHub API](https://img.shields.io/badge/Data-GitHub_Trending-181717?logo=github&logoColor=white)](#-daily-star-growth-board)
 
-**[🌐 在线看板（Streamlit Cloud）](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/)**
+**[🌐 Live Dashboard (Streamlit Cloud)](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/)**
 
-*填入仓库 → 抓取近期 Issue → 多模型分析 → 导出结构化报告*
+**English** | [简体中文](./README.zh-CN.md)
 
-作者 **[Mocas-12](https://github.com/Mocas-12)** · 只读公开数据 · 内部研究用途
+*Enter repositories → fetch recent issues → multi-model analysis → export structured reports*
+
+Read-only public data · for internal research use
 
 </div>
 
 ---
 
-## 📖 目录
+## 📖 Table of Contents
 
-- [功能特性](#-功能特性)
-- [工作原理](#-工作原理)
-- [每日 Star 增幅榜](#-每日-star-增幅榜)
-- [多模型切换](#-多模型切换)
-- [项目结构](#-项目结构)
-- [快速开始](#-快速开始)
-- [配置说明](#-配置说明)
-- [如何创建 GITHUB_TOKEN](#-如何创建-github_token)
-- [常见问题](#-常见问题)
-- [合规与安全](#-合规与安全)
+- [Features](#-features)
+- [How It Works](#-how-it-works)
+- [Daily Star Growth Board](#-daily-star-growth-board)
+- [Multi-LLM Switching](#-multi-llm-switching)
+- [Project Structure](#-project-structure)
+- [Quick Start](#-quick-start)
+- [Configuration](#-configuration)
+- [How to Create GITHUB_TOKEN](#-how-to-create-github_token)
+- [FAQ](#-faq)
+- [Compliance and Security](#-compliance-and-security)
 
-## ✨ 功能特性
+## ✨ Features
 
-- 🔎 **痛点分类**：逐条 Issue 语义分类（bug / feature / question / doc / other）+ 痛感 1-5 分级 + 情绪标注
-- 🧩 **主题聚类**：两阶段语义聚类（分批归纳 → 全局合并），提炼 5~12 个主题簇、严重度与代表性原话
-- 📈 **趋势研判**：开发者情绪分布、热度上升话题、社区风险信号与产品机会点
-- 🔀 **多模型切换**：OpenRouter / OpenAI / Gemini / Claude / DeepSeek / Kimi / 智谱 / 通义 / Grok 等 13 家预设，任意 OpenAI 兼容端点即插即用
-- 🔥 **每日 Star 增幅榜**：主页常驻 GitHub 官方 Trending「stars today」增幅 Top 10，每天换血，一键追加分析目标
-- 📄 **一键报告**：三大板块 Markdown 市场研究报告，数字全部本地实算、可复核
-- ⚡ **并发批处理**：分类阶段线程池并发 + 429/5xx 指数退避，失败批次自动兜底不中断管线
-- 🖥️ **双入口**：Streamlit 交互看板 + 无头 CLI 批处理（支持 Windows 定时任务）
+- 🔎 **Pain-Point Classification**: per-issue semantic classification (bug / feature / question / doc / other) + pain severity on a 1-5 scale + sentiment tagging
+- 🧩 **Topic Clustering**: two-stage semantic clustering (batch summarization → global merging), distilling 5~12 topic clusters with severity and representative quotes
+- 📈 **Trend Analysis**: developer sentiment distribution, rising hot topics, community risk signals, and product opportunities
+- 🔀 **Multi-LLM Switching**: 13 presets — OpenRouter / OpenAI / Gemini / Claude / DeepSeek / Kimi / Zhipu / Tongyi / Grok and more; any OpenAI-compatible endpoint plugs right in
+- 🔥 **Daily Star Growth Board**: homepage always shows GitHub's official Trending "stars today" Top 10, refreshed every day; add a repo to your analysis targets with one click
+- 📄 **One-Click Reports**: three-section Markdown market research reports — every number computed locally and verifiable
+- ⚡ **Concurrent Batching**: thread-pool concurrency for classification + exponential backoff on 429/5xx; failed batches fall back to defaults without breaking the pipeline
+- 🖥️ **Dual Entry Points**: interactive Streamlit dashboard + headless CLI batching (supports Windows scheduled tasks)
 
-## 🧠 工作原理
+## 🧠 How It Works
 
 ```mermaid
 flowchart LR
-    A[📋 GitHub Issues<br/>最近 N 天] --> B[🕸 抓取层<br/>REST API · 限流退避]
-    B --> C[🧠 大模型分析<br/>OpenAI 兼容端点]
-    C --> D[🏷 逐条分类<br/>类别 · 痛感 · 情绪]
-    D --> E[🧩 语义聚类<br/>两阶段归纳主题]
-    E --> F[📈 趋势研判<br/>情绪分布 · 机会点]
-    F --> G[📄 Markdown<br/>研究报告]
+    A[📋 GitHub Issues<br/>last N days] --> B[🕸 Fetch Layer<br/>REST API · rate-limit backoff]
+    B --> C[🧠 LLM Analysis<br/>OpenAI-compatible endpoint]
+    C --> D[🏷 Per-Issue Classification<br/>category · pain level · sentiment]
+    D --> E[🧩 Semantic Clustering<br/>two-stage topic induction]
+    E --> F[📈 Trend Analysis<br/>sentiment distribution · opportunities]
+    F --> G[📄 Markdown<br/>research report]
 ```
 
-1. **抓取**：GitHub REST API 拉取目标仓库最近 N 天的 Issue 与热门评论，过滤 PR、按热度排序，限流自动退避（Retry-After）
-2. **分类**：Issue 文本并发分批发给所选大模型，强制返回结构化 JSON（类别 / 痛感 / 情绪 / 中文概括），解析失败自动重试
-3. **聚类**：全部分类摘要两阶段归纳为主题簇（名称 / 频次 / 严重度 / 代表原话 / 一句话洞察）
-4. **研判与产出**：聚合情绪分布生成趋势研判，装配「高频痛点 / 功能诉求 / 情绪与趋势」三大板块报告
+1. **Fetch**: the GitHub REST API pulls issues and top comments from the last N days of the target repos, filters out PRs, sorts by hotness, and backs off automatically on rate limits (Retry-After)
+2. **Classify**: issue text is batched concurrently to the selected LLM, forced to return structured JSON (category / pain level / sentiment / Chinese summary), with automatic retry on parse failures
+3. **Cluster**: all classification summaries are induced in two stages into topic clusters (name / frequency / severity / representative quotes / one-line insight)
+4. **Analyze & produce**: sentiment distributions are aggregated into trend analysis, then assembled into a three-section "high-frequency pain points / feature requests / sentiment and trends" report
 
-## 🔥 每日 Star 增幅榜
+## 🔥 Daily Star Growth Board
 
-主页顶部的「🔥 今日 STAR 增幅 TOP 10」卡片栅格（默认展开）展示 GitHub 官方 Trending
-统计的**最近一天新增星标数**（`stars today`），并按增幅数值降序排列——不是总星数排行，
-榜单每天都会换血，适合发现正在爆发的新仓库。点击卡片上的 ➕ 可一键把仓库加入分析目标。
+The "🔥 Today's STAR Growth TOP 10" card grid at the top of the homepage (expanded by default) shows the
+**stars gained in the last day** (`stars today`) from GitHub's official Trending, sorted in descending order by
+growth — not an all-time star ranking. The board refreshes every day, making it perfect for spotting repos that
+are taking off right now. Click ➕ on a card to add the repo to your analysis targets with one click.
 
-| 特性 | 说明 |
+| Feature | Details |
 | --- | --- |
-| 数据源 | https://github.com/trending?since=daily （页面抓取，不消耗 GitHub API 配额，无需 Token） |
-| 刷新节奏 | 按 UTC 日期缓存，每天首次打开应用时抓取一次 |
-| 降级策略 | 页面结构变化时显示「榜单暂时不可用」，不影响其他功能 |
+| Data source | https://github.com/trending?since=daily (scraped from the page; consumes no GitHub API quota, no token needed) |
+| Refresh cadence | Cached by UTC date; fetched once on the first app open each day |
+| Fallback | If the page structure changes, shows "board temporarily unavailable" without affecting other features |
 
-## 🔀 多模型切换
+## 🔀 Multi-LLM Switching
 
-「模型设置」可在主流大模型之间一键切换：全走 **OpenAI Chat Completions 兼容协议**，
-切换服务商时自动带出官方端点与默认模型，Key 的获取地址见输入框帮助文字。
+"Model Settings" lets you switch between mainstream LLMs with one click: everything goes through the
+**OpenAI Chat Completions compatible protocol**. Switching a provider automatically fills in its official
+endpoint and default model; see the input help text for where to get each key.
 
-| 服务商 | 端点 | Key 环境变量 |
+| Provider | Endpoint | Key environment variable |
 | --- | --- | --- |
-| OpenRouter（默认 · Ox Alpha） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
+| OpenRouter (default · Ox Alpha) | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` |
-| Google Gemini | `…/v1beta/openai`（官方兼容端点） | `GEMINI_API_KEY` |
-| Anthropic Claude | `https://api.anthropic.com/v1`（官方兼容层） | `ANTHROPIC_API_KEY` |
+| Google Gemini | `…/v1beta/openai` (official compatible endpoint) | `GEMINI_API_KEY` |
+| Anthropic Claude | `https://api.anthropic.com/v1` (official compatibility layer) | `ANTHROPIC_API_KEY` |
 | DeepSeek | `https://api.deepseek.com/v1` | `DEEPSEEK_API_KEY` |
-| Moonshot（Kimi） | `https://api.moonshot.cn/v1` | `MOONSHOT_API_KEY` |
-| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `ZHIPU_API_KEY` |
-| 通义千问（百炼） | `…/compatible-mode/v1` | `DASHSCOPE_API_KEY` |
-| xAI（Grok） | `https://api.x.ai/v1` | `XAI_API_KEY` |
-| 硅基流动 SiliconFlow | `https://api.siliconflow.cn/v1` | `SILICONFLOW_API_KEY` |
+| Moonshot (Kimi) | `https://api.moonshot.cn/v1` | `MOONSHOT_API_KEY` |
+| Zhipu GLM | `https://open.bigmodel.cn/api/paas/v4` | `ZHIPU_API_KEY` |
+| Tongyi Qwen (Bailian) | `…/compatible-mode/v1` | `DASHSCOPE_API_KEY` |
+| xAI (Grok) | `https://api.x.ai/v1` | `XAI_API_KEY` |
+| SiliconFlow | `https://api.siliconflow.cn/v1` | `SILICONFLOW_API_KEY` |
 | Groq | `https://api.groq.com/openai/v1` | `GROQ_API_KEY` |
-| Ollama（本地 · 免费） | `http://localhost:11434/v1` | 无需 Key |
-| 自定义 | 任意 OpenAI 兼容端点 | `LLM_API_KEY`（选填） |
+| Ollama (local · free) | `http://localhost:11434/v1` | No key required |
+| Custom | Any OpenAI-compatible endpoint | `LLM_API_KEY` (optional) |
 
-> - 模型名更新很快：下拉列表只是常用预置，选「✏️ 其他（手动输入）」即可填写任意模型名
-> - 新增服务商只需在 `src/llm_providers.py` 登记一行（端点 + 模型 + Key 环境变量名）
+> - Model names change quickly: the dropdown only lists common presets — choose "✏️ Other (manual input)" to enter any model name
+> - Adding a new provider takes just one line in `src/llm_providers.py` (endpoint + model + key env var name)
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```text
 gh-pain-intel/
-├── app.py                    # Streamlit 看板：增幅榜 + 指标卡 + 三板块 Tab + 报告下载
-├── cli.py                    # 无头批处理入口（--provider 切换模型）
+├── app.py                    # Streamlit dashboard: growth board + metric cards + three-section tabs + report download
+├── cli.py                    # Headless batch entry point (--provider to switch models)
 ├── src/
-│   ├── scraper.py            # 抓取层：REST API · 限流退避 · PR 过滤 · 热度排序 · 评论上下文
-│   ├── trending.py           # 热榜层：解析 GitHub Trending「stars today」→ 每日增幅 Top 10
-│   ├── llm_providers.py      # 服务商注册表：13 家主流大模型端点 / 模型 / Key 预设
-│   ├── ai_engine.py          # 分析层：并发分类 → 两阶段聚类 → 趋势研判（强制 JSON + 重试）
-│   ├── report.py             # 报告层：三大板块 Markdown 装配（数字本地实算，可复核）
-│   └── ui.py                 # UI 层：深空指挥中心风格组件（玻璃拟态卡片 / 渐变标题）
-├── tests/                    # 离线单元测试（27 个用例，不打网络）
-├── run_weekly.bat            # Windows 定时任务脚本
-├── e2e_run.py                # 端到端冒烟脚本
+│   ├── scraper.py            # Fetch layer: REST API · rate-limit backoff · PR filtering · hotness sorting · comment context
+│   ├── trending.py           # Trending layer: parses GitHub Trending "stars today" → daily growth Top 10
+│   ├── llm_providers.py      # Provider registry: 13 mainstream LLM endpoint / model / key presets
+│   ├── ai_engine.py          # Analysis layer: concurrent classification → two-stage clustering → trend analysis (strict JSON + retries)
+│   ├── report.py             # Report layer: three-section Markdown assembly (numbers computed locally, verifiable)
+│   └── ui.py                 # UI layer: deep-space command-center style components (glassmorphism cards / gradient titles)
+├── tests/                    # Offline unit tests (27 cases, no network)
+├── run_weekly.bat            # Windows scheduled-task script
+├── e2e_run.py                # End-to-end smoke script
 └── requirements.txt
 ```
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
 ```bash
 git clone https://github.com/Mocas-12/gh-pain-intel.git
@@ -126,27 +130,27 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-> 本地运行推荐把 Key 写入项目根目录 `.env`（已被 gitignore 排除），引擎启动时自动加载。
+> For local runs, put your keys in a `.env` file at the project root (already gitignored); the engine loads it automatically at startup.
 
-| 命令 | 说明 |
+| Command | Description |
 | --- | --- |
-| `streamlit run app.py` | 启动 Web 看板 |
-| `python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md` | 无头批处理，适合定时任务 |
-| `python cli.py --provider gemini --repos ollama/ollama --days 7` | CLI 切换其他模型 |
-| `python -m unittest discover -s tests -v` | 运行离线单元测试 |
+| `streamlit run app.py` | Launch the web dashboard |
+| `python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md` | Headless batching, great for scheduled tasks |
+| `python cli.py --provider gemini --repos ollama/ollama --days 7` | Switch models from the CLI |
+| `python -m unittest discover -s tests -v` | Run the offline unit tests |
 
-## ⚙️ 配置说明
+## ⚙️ Configuration
 
-| 变量 | 说明 |
+| Variable | Description |
 | --- | --- |
-| `GITHUB_TOKEN` | GitHub PAT，配额从 60 次/小时 提升至 5000 次/小时（[创建教程见下](#-如何创建-github_token)） |
-| `OPENROUTER_API_KEY` | 默认服务商 OpenRouter 的 Key（https://openrouter.ai/keys） |
-| `OPENROUTER_MODEL` / `OPENROUTER_BASE_URL` | OpenRouter 的模型 / 端点覆盖（历史兼容） |
-| `LLM_API_KEY` | 通用 Key 兜底，优先级高于 `OPENROUTER_API_KEY`（自定义端点常用） |
-| `LLM_PROVIDER` | CLI 的默认服务商（如 `gemini`、`deepseek`），不影响界面手动切换 |
-| 各服务商专属 Key | `OPENAI_API_KEY`、`GEMINI_API_KEY`、`ANTHROPIC_API_KEY`、`DEEPSEEK_API_KEY`、`MOONSHOT_API_KEY`、`ZHIPU_API_KEY`、`DASHSCOPE_API_KEY`、`XAI_API_KEY`、`SILICONFLOW_API_KEY`、`GROQ_API_KEY` —— 界面选中对应服务商后自动带入 |
+| `GITHUB_TOKEN` | GitHub PAT; raises the quota from 60/hour to 5,000/hour ([see the tutorial below](#-how-to-create-github_token)) |
+| `OPENROUTER_API_KEY` | Key for OpenRouter, the default provider (https://openrouter.ai/keys) |
+| `OPENROUTER_MODEL` / `OPENROUTER_BASE_URL` | OpenRouter model / endpoint overrides (legacy compatibility) |
+| `LLM_API_KEY` | Generic key fallback; takes priority over `OPENROUTER_API_KEY` (commonly used with custom endpoints) |
+| `LLM_PROVIDER` | Default provider for the CLI (e.g. `gemini`, `deepseek`); does not affect manual switching in the UI |
+| Provider-specific keys | `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `MOONSHOT_API_KEY`, `ZHIPU_API_KEY`, `DASHSCOPE_API_KEY`, `XAI_API_KEY`, `SILICONFLOW_API_KEY`, `GROQ_API_KEY` — auto-filled once the matching provider is selected in the UI |
 
-云端部署（Streamlit Cloud）通过 **Manage app → Settings → Secrets** 服务端注入凭据，访客不可见，按需配置用到的服务商即可：
+Cloud deployment (Streamlit Cloud) injects credentials server-side via **Manage app → Settings → Secrets** — invisible to visitors; configure only the providers you actually use:
 
 ```toml
 GITHUB_TOKEN = "ghp_你的token"
@@ -154,74 +158,74 @@ OPENROUTER_API_KEY = "sk-or-v1-…"
 GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 ```
 
-## 🔑 如何创建 GITHUB_TOKEN
+## 🔑 How to Create GITHUB_TOKEN
 
-> 不配置也能用，但匿名配额仅 **60 次/小时** 且按 IP 共享（云端部署极易耗尽）；
-> 配置后提升至 **5000 次/小时**。整个过程约 1 分钟。
+> It works without one, but the anonymous quota is only **60 requests/hour** and shared by IP (cloud deployments exhaust it almost instantly);
+> configuring a token raises it to **5,000 requests/hour**. The whole process takes about 1 minute.
 
-1. 登录 GitHub → 打开 **https://github.com/settings/tokens**
-2. 点击 **「Generate new token」→「Generate new token (classic)」**
-3. 填写两项即可：
-   - **Note**：随便起名，如 `gh-pain-intel`
-   - **Expiration**：有效期，建议 `90 days` 或 `No expiration`
-4. ⬇️ **权限 scopes 一项都不用勾选**——本工具只读公开数据
-5. 点击页面底部绿色按钮 **「Generate token」**
-6. **立即复制**页面显示的 Token（`ghp_` 开头，只显示这一次！）
-7. 写入配置（二选一）：
-   - 本地：项目根目录 `.env` 文件中加一行
+1. Sign in to GitHub → open **https://github.com/settings/tokens**
+2. Click **"Generate new token" → "Generate new token (classic)"**
+3. Fill in just two fields:
+   - **Note**: any name, e.g. `gh-pain-intel`
+   - **Expiration**: validity period; `90 days` or `No expiration` recommended
+4. ⬇️ **No permission scopes need to be checked at all** — this tool only reads public data
+5. Click the green **"Generate token"** button at the bottom of the page
+6. **Copy the token immediately** (starts with `ghp_`, shown only this once!)
+7. Write it into your config (either one):
+   - Local: add a line to the `.env` file in the project root
      ```ini
      GITHUB_TOKEN=***
      ```
-   - 云端：应用右下角 **Manage app → Settings → Secrets** 中添加
+   - Cloud: add it under **Manage app → Settings → Secrets** at the bottom-right of the app
      ```toml
      GITHUB_TOKEN = "ghp_你的token"
      ```
 
-> ✅ 安全说明：该 Token 只能读取你账号可见的公开数据，无法写入或修改任何仓库；
-> 泄露了也只需回到同一页面点 Delete 重新生成一个。
+> ✅ Security note: this token can only read public data visible to your account and cannot write to or modify any repo;
+> if it ever leaks, just go back to the same page, click Delete, and generate a new one.
 
-## ❓ 常见问题
+## ❓ FAQ
 
 <details>
-<summary><b>GitHub 配额耗尽 / 云端抓取失败</b></summary>
+<summary><b>GitHub quota exhausted / cloud fetch fails</b></summary>
 
-- 匿名配额仅 60 次/小时且按 IP 共享，Streamlit 共享出口 IP 极易耗尽
-- 解决：配置 <code>GITHUB_TOKEN</code>（提升至 5000 次/小时），创建教程见上文
+- The anonymous quota is only 60 requests/hour and shared by IP; Streamlit's shared egress IP exhausts it easily
+- Fix: configure <code>GITHUB_TOKEN</code> (raises it to 5,000 requests/hour) — see the tutorial above
 </details>
 
 <details>
-<summary><b>榜单显示「暂时不可用」</b></summary>
+<summary><b>The board shows "temporarily unavailable"</b></summary>
 
-- GitHub Trending 页面结构变化或网络波动所致
-- 不影响其他功能；稍后刷新页面重试即可，当天缓存不受影响
+- Caused by GitHub Trending page-structure changes or network hiccups
+- Other features are unaffected; refresh the page later and retry — the day's cache is not impacted
 </details>
 
 <details>
-<summary><b>分析时提示「N 个批次分类失败」</b></summary>
+<summary><b>Analysis reports "N batches failed to classify"</b></summary>
 
-- 多为模型端限流（429），失败批次已用默认值兜底，其余样本不受影响
-- 建议调低侧边栏「并发请求数」（如 2）或「批大小」后重跑
+- Usually model-side rate limiting (429); failed batches already fell back to defaults, and other samples are unaffected
+- Try lowering "Concurrent requests" (e.g. 2) or "Batch size" in the sidebar and rerun
 </details>
 
 <details>
-<summary><b>某些模型报温度参数错误</b></summary>
+<summary><b>Some models throw a temperature parameter error</b></summary>
 
-- OpenAI o 系列等推理模型只接受默认温度
-- 解决：把「模型设置」中的 Temperature 调回 1.0
+- Reasoning models like OpenAI's o-series only accept the default temperature
+- Fix: set Temperature back to 1.0 in "Model Settings"
 </details>
 
 <details>
-<summary><b>如何换一个模型分析</b></summary>
+<summary><b>How to analyze with a different model</b></summary>
 
-- 界面：侧边栏「模型设置」下拉切换服务商与模型，自动带出官方端点
-- CLI：<code>python cli.py --provider gemini --repos …</code>
+- UI: switch provider and model from the "Model Settings" dropdown in the sidebar; the official endpoint is filled in automatically
+- CLI: <code>python cli.py --provider gemini --repos …</code>
 </details>
 
-## 🔒 合规与安全
+## 🔒 Compliance and Security
 
-- 🔍 对公开数据**只读**分析，产出**内部研究报告**，不向任何第三方平台自动发帖
-- ✍️ 引用的社区文本版权归原作者所有
-- 🔑 密钥仅存于本地 `.env`（gitignore 排除）或 Streamlit Cloud Secrets 服务端注入，界面不回显
+- 🔍 **Read-only** analysis of public data, producing **internal research reports** — never auto-posts to any third-party platform
+- ✍️ Quoted community text remains the copyright of its original authors
+- 🔑 Keys live only in a local `.env` (gitignored) or are injected server-side via Streamlit Cloud Secrets; the UI never echoes them back
 
 ---
 
@@ -229,6 +233,6 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 
 **Made with 🛰️ by [Mocas-12](https://github.com/Mocas-12)**
 
-🌐 [在线看板](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/) · 🐛 [问题反馈](https://github.com/Mocas-12/gh-pain-intel/issues) · 📖 [仓库主页](https://github.com/Mocas-12/gh-pain-intel)
+🌐 [Live Dashboard](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/) · 🐛 [Report an Issue](https://github.com/Mocas-12/gh-pain-intel/issues) · 📖 [Repository Home](https://github.com/Mocas-12/gh-pain-intel)
 
 </div>
