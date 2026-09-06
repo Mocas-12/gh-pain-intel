@@ -65,9 +65,7 @@ def main() -> None:
     print("机会点:", tr.get("opportunities"))
 
     meta = {
-        "repos": repos,
         "days": days,
-        "total": len(issues),
         "model": engine.model,
         "generated_at": time.strftime("%Y-%m-%d %H:%M"),
     }

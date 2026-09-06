@@ -144,7 +144,7 @@ streamlit run app.py
 | `GITHUB_TOKEN` | GitHub PAT，配额从 60 次/小时 提升至 5000 次/小时（[创建教程见下](#-如何创建-github_token)） |
 | `OPENROUTER_API_KEY` | 默认服务商 OpenRouter 的 Key（https://openrouter.ai/keys） |
 | `OPENROUTER_MODEL` / `OPENROUTER_BASE_URL` | OpenRouter 的模型 / 端点覆盖（历史兼容） |
-| `LLM_API_KEY` | 通用 Key 兜底，优先级高于 `OPENROUTER_API_KEY`（自定义端点常用） |
+| `LLM_API_KEY` | 通用 Key 兜底，优先级高于 `OPENROUTER_API_KEY`（自定义端点常用）。注意：CLI（cli.py）侧解析顺序相反，`OPENROUTER_API_KEY` 优先于 `LLM_API_KEY` |
 | `LLM_PROVIDER` | CLI 的默认服务商（如 `gemini`、`deepseek`），不影响界面手动切换 |
 | 各服务商专属 Key | `OPENAI_API_KEY`、`GEMINI_API_KEY`、`ANTHROPIC_API_KEY`、`DEEPSEEK_API_KEY`、`MOONSHOT_API_KEY`、`ZHIPU_API_KEY`、`DASHSCOPE_API_KEY`、`XAI_API_KEY`、`SILICONFLOW_API_KEY`、`GROQ_API_KEY` —— 界面选中对应服务商后自动带入 |
 

@@ -22,6 +22,9 @@ from typing import Callable
 
 import requests
 
+# 模块级会话：复用底层连接池（行为不变，仅避免每次请求重建连接）
+_SESSION = requests.Session()
+
 # 默认服务商：OpenRouter · Ox Alpha（可在调用时被 base_url/model 参数覆盖）
 DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "stealth/ox-alpha"
@@ -149,7 +152,7 @@ class PainIntelEngine:
         last_exc: Exception | None = None
         for attempt in range(3):
             try:
-                resp = requests.post(
+                resp = _SESSION.post(
                     f"{self.base_url}/chat/completions",
                     headers=self._headers(),
                     json={
@@ -172,8 +175,6 @@ class PainIntelEngine:
                 return resp.json()["choices"][0]["message"]["content"]
             except (requests.ConnectionError, requests.Timeout) as exc:
                 last_exc = exc
-                if attempt == 3:
-                    raise
                 time.sleep(delay)
                 delay *= 2
         raise RuntimeError(f"模型请求连续失败: {last_exc}")
@@ -192,12 +193,12 @@ class PainIntelEngine:
         """连通性 + Key 有效性快速校验（不消耗模型 tokens，探测失败时退回最小对话）。"""
         try:
             if "openrouter" in self.base_url.lower():
-                resp = requests.get(f"{self.base_url}/auth/key", headers=self._headers(), timeout=10)
+                resp = _SESSION.get(f"{self.base_url}/auth/key", headers=self._headers(), timeout=10)
                 if resp.status_code == 200:
                     return True
                 if resp.status_code == 401:
                     return False
-            models = requests.get(f"{self.base_url}/models", headers=self._headers(), timeout=10)
+            models = _SESSION.get(f"{self.base_url}/models", headers=self._headers(), timeout=10)
             if models.status_code == 200:
                 return True
             if models.status_code in (401, 403):
@@ -209,7 +210,7 @@ class PainIntelEngine:
     def _ping_chat(self) -> bool:
         """发送 max_tokens=1 的最小对话验证端点真正可用（个别服务商才会走到这里）。"""
         try:
-            resp = requests.post(
+            resp = _SESSION.post(
                 f"{self.base_url}/chat/completions",
                 headers=self._headers(),
                 json={
@@ -360,7 +361,6 @@ class PainIntelEngine:
         )
         if not isinstance(data, dict):
             data = {}
-        data.setdefault("emotion_distribution", emo_dist)
         return data
 
     # ---------- 完整管线 ----------

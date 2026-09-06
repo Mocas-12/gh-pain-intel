@@ -22,6 +22,9 @@ from pathlib import Path
 
 import requests
 
+# 模块级会话：复用底层连接池（行为不变，仅避免每次请求重建连接）
+_SESSION = requests.Session()
+
 GITHUB_TRENDING_URL = "https://github.com/trending"
 TOP_N = 10
 CACHE_DIR = Path(
@@ -88,11 +91,13 @@ def parse_trending_html(page_html: str) -> list[dict]:
     return out[:TOP_N]
 
 
-def get_star_gainers(force: bool = False, timeout: int = 20) -> list[dict]:
+def get_star_gainers() -> list[dict]:
     """获取今日 Star 增幅 Top 10：优先读当日缓存，否则抓取 Trending 页并落盘。
 
     Raises RuntimeError 当请求失败或页面解析为空时（由调用方决定如何降级展示）。
     """
+    force = False
+    timeout = 20
     tag = day_tag()
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = CACHE_DIR / f"trending_daily_{tag}.json"
@@ -105,7 +110,7 @@ def get_star_gainers(force: bool = False, timeout: int = 20) -> list[dict]:
         except (OSError, json.JSONDecodeError):
             pass  # 缓存损坏则重新抓取
 
-    resp = requests.get(
+    resp = _SESSION.get(
         GITHUB_TRENDING_URL,
         params={"since": "daily"},
         headers=BROWSER_HEADERS,

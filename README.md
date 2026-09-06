@@ -146,7 +146,7 @@ streamlit run app.py
 | `GITHUB_TOKEN` | GitHub PAT; raises the quota from 60/hour to 5,000/hour ([see the tutorial below](#-how-to-create-github_token)) |
 | `OPENROUTER_API_KEY` | Key for OpenRouter, the default provider (https://openrouter.ai/keys) |
 | `OPENROUTER_MODEL` / `OPENROUTER_BASE_URL` | OpenRouter model / endpoint overrides (legacy compatibility) |
-| `LLM_API_KEY` | Generic key fallback; takes priority over `OPENROUTER_API_KEY` (commonly used with custom endpoints) |
+| `LLM_API_KEY` | Generic key fallback; takes priority over `OPENROUTER_API_KEY` (commonly used with custom endpoints). Note: the CLI (`cli.py`) resolves keys in the reverse order — `OPENROUTER_API_KEY` takes priority over `LLM_API_KEY` |
 | `LLM_PROVIDER` | Default provider for the CLI (e.g. `gemini`, `deepseek`); does not affect manual switching in the UI |
 | Provider-specific keys | `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `MOONSHOT_API_KEY`, `ZHIPU_API_KEY`, `DASHSCOPE_API_KEY`, `XAI_API_KEY`, `SILICONFLOW_API_KEY`, `GROQ_API_KEY` — auto-filled once the matching provider is selected in the UI |
 

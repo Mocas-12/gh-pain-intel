@@ -56,9 +56,6 @@ class Issue:
             f"热门评论:\n{comment_txt[:800]}"
         )
 
-    def to_dict(self) -> dict:
-        return asdict(self)
-
 
 class GitHubClient:
     """带快速失败限流处理的极简 GitHub REST 客户端。"""
@@ -140,8 +137,6 @@ class GitHubClient:
                 time.sleep(2.0 * (attempt + 1))
                 continue
             return resp
-        assert last_exc is not None
-        raise last_exc
 
     # ---------- 业务抓取 ----------
     def fetch_comments(self, repo: str, number: int, limit: int = 5) -> list[str]:

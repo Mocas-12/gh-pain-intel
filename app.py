@@ -126,10 +126,10 @@ with st.sidebar:
             on_change=_sync_provider,
         )
         preset = PROVIDERS[provider_id]
+        st.session_state.setdefault("llm_base_url", preset["base_url"])
 
         base_url = st.text_input(
             "API 端点（OpenAI 兼容）",
-            value=preset["base_url"],
             key="llm_base_url",
             help="分析层兼容 OpenAI Chat Completions 协议；切换服务商自动带出官方端点，也可手动修改",
         )
@@ -296,13 +296,10 @@ if run_btn:
     st.session_state.result = result
     st.session_state.errors = errors
     st.session_state.scrape_meta = {
-        "repos": repos,
         "days": days,
-        "total": len(issues),
         "model": model,
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
-    progress.progress(1.0, text="✅ 分析完成")
 
 # ---------------- 结果展示 ----------------
 if st.session_state.result:

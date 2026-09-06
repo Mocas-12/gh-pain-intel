@@ -9,8 +9,7 @@ import html as _html
 
 import streamlit as st
 
-ACCENT = {"cyan": "#22d3ee", "violet": "#8b5cf6", "green": "#34d399",
-          "red": "#f87171", "amber": "#fbbf24"}
+ACCENT = {"cyan": "#22d3ee", "red": "#f87171", "amber": "#fbbf24"}
 
 _SEV_CLASS = {"高": "sev-high", "中": "sev-mid", "低": "sev-low"}
 _CAT_ICON = {"bug": "🐞", "feature": "🚀", "question": "❓", "doc": "📚", "other": "🔎"}

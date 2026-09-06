@@ -102,9 +102,7 @@ def main() -> None:
     )
 
     meta = {
-        "repos": repos,
         "days": args.days,
-        "total": len(issues),
         "model": model,
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
@@ -115,7 +113,7 @@ def main() -> None:
             args.out_dir, f"pain_intel_report_{datetime.now().strftime('%Y%m%d_%H%M')}.md"
         )
     else:
-        out_path = args.out or "pain_intel_report.md"
+        out_path = args.out
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(md)
     print(f"[3/3] ✅ 报告已写入 {out_path}")
