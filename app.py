@@ -63,7 +63,7 @@ if hot_repos:
         pair = hot_repos[start : start + 2]
         cells = st.columns(2, gap="small")
         for cell, (rank, r) in zip(cells, enumerate(pair, start=start + 1)):
-            info, add = cell.columns([14, 1], vertical_alignment="center")
+            info, add = cell.columns([9, 1], vertical_alignment="center")
             info.markdown(gain_card(r, rank), unsafe_allow_html=True)
             add.button(
                 "➕",

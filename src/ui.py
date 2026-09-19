@@ -152,6 +152,17 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
   margin-top:4px; color:var(--sub); font-size:.84rem;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
+/* 榜单卡右侧 ➕ 图标按钮：按钮列很窄且带 help tooltip 包装层，
+   须压缩内边距并单独着色，否则图标被裁切、只剩默认深色底 */
+[data-testid="stHorizontalBlock"]:has(.gain-card) .stButton button {
+  min-width:0; padding:4px 5px; font-size:15px; line-height:1;
+  border:1px solid rgba(34,211,238,.35); border-radius:10px;
+  background:rgba(34,211,238,.08); color:#67e8f9; box-shadow:none;
+}
+[data-testid="stHorizontalBlock"]:has(.gain-card) .stButton button:hover {
+  background:rgba(34,211,238,.18); border-color:rgba(34,211,238,.6);
+  box-shadow:0 0 12px rgba(34,211,238,.35);
+}
 
 /* ---------- Tab 胶囊化 ---------- */
 .stTabs [data-baseweb="tab-list"] { gap:6px; background:transparent; }
