@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -32,10 +32,10 @@ def article(repo: str, stars: int, gained: int, lang: str = "Python", desc: str 
 
 class DayTagTest(unittest.TestCase):
     def test_known_date(self):
-        self.assertEqual(day_tag(datetime(2026, 8, 24, tzinfo=timezone.utc)), "2026-08-24")
+        self.assertEqual(day_tag(datetime(2026, 8, 24, tzinfo=UTC)), "2026-08-24")
 
     def test_year_boundary(self):
-        self.assertEqual(day_tag(datetime(2027, 1, 1, tzinfo=timezone.utc)), "2027-01-01")
+        self.assertEqual(day_tag(datetime(2027, 1, 1, tzinfo=UTC)), "2027-01-01")
 
 
 class ParseTrendingHtmlTest(unittest.TestCase):

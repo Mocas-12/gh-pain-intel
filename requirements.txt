@@ -1,4 +1,6 @@
-streamlit>=1.36
-requests>=2.31
-pandas>=2.2
-plotly>=5.22
+# 运行时依赖：锁定到当前通过全部测试的版本组合。
+# Streamlit 前端 DOM 结构与 pandas API 跨版本可能破坏 UI/分析层，升级前先本地跑 CI 同款检查。
+streamlit==1.62.0
+requests==2.34.2
+pandas==3.0.5
+plotly==6.9.0

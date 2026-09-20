@@ -8,7 +8,7 @@ import os
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -62,7 +62,7 @@ if hot_repos:
     for start in range(0, len(hot_repos), 2):  # 两列卡片栅格，按名次左右、自上而下排列
         pair = hot_repos[start : start + 2]
         cells = st.columns(2, gap="small")
-        for cell, (rank, r) in zip(cells, enumerate(pair, start=start + 1)):
+        for cell, (rank, r) in zip(cells, enumerate(pair, start=start + 1), strict=False):
             info, add = cell.columns([9, 1], vertical_alignment="center")
             info.markdown(gain_card(r, rank), unsafe_allow_html=True)
             add.button(
@@ -206,7 +206,7 @@ if run_btn:
     if quota:
         tag = "Token 认证" if quota["authenticated"] else "匿名共享 IP"
         reset_txt = (
-            f" · 重置于 {datetime.fromtimestamp(quota['reset'], tz=timezone.utc).astimezone():%H:%M}"
+            f" · 重置于 {datetime.fromtimestamp(quota['reset'], tz=UTC).astimezone():%H:%M}"
             if quota["remaining"] < quota["limit"]
             else ""
         )

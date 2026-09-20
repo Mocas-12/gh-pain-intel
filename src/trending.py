@@ -17,7 +17,7 @@ import html as html_lib
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import requests
@@ -44,7 +44,7 @@ BROWSER_HEADERS = {
 
 def day_tag(now: datetime | None = None) -> str:
     """当前 UTC 时间对应的日期标签，如 '2026-08-24'。"""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     return now.strftime("%Y-%m-%d")
 
 
@@ -96,13 +96,12 @@ def get_star_gainers() -> list[dict]:
 
     Raises RuntimeError 当请求失败或页面解析为空时（由调用方决定如何降级展示）。
     """
-    force = False
     timeout = 20
     tag = day_tag()
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = CACHE_DIR / f"trending_daily_{tag}.json"
 
-    if cache_file.exists() and not force:
+    if cache_file.exists():
         try:
             data = json.loads(cache_file.read_text(encoding="utf-8"))
             if isinstance(data, list):

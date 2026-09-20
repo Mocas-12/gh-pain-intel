@@ -201,7 +201,8 @@ def inject() -> None:
 
 def hero(badge: str, title: str, sub: str) -> None:
     """页面顶部渐变大标题。"""
-    esc = lambda s: _html.escape(str(s))
+    def esc(s: object) -> str:
+        return _html.escape(str(s))
     st.markdown(
         '<div class="hero">'
         f'<div class="hero-badge"><span class="hero-dot"></span>{esc(badge)}</div>'

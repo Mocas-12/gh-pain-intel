@@ -8,9 +8,9 @@
 from __future__ import annotations
 
 import time
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta, timezone
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, UTC
 
 import requests
 
@@ -102,12 +102,10 @@ class GitHubClient:
 
     def _get(self, url: str, params: dict | None = None, max_retry: int = 2) -> requests.Response:
         """GET：核心配额尽 → 立即抛错；429/网络抖动 → 短退避后重试；5xx → 重试一次。"""
-        last_exc: Exception | None = None
         for attempt in range(max_retry + 1):
             try:
                 resp = self.session.get(url, params=params, timeout=30)
-            except requests.RequestException as exc:
-                last_exc = exc
+            except requests.RequestException:
                 if attempt == max_retry:
                     raise
                 time.sleep(2.0)
@@ -118,8 +116,8 @@ class GitHubClient:
                 reset = float(reset_raw) if reset_raw else None
                 hint = ""
                 if reset:
-                    reset_local = datetime.fromtimestamp(reset, tz=timezone.utc).astimezone()
-                    mins = max(1, round((reset - datetime.now(timezone.utc).timestamp()) / 60))
+                    reset_local = datetime.fromtimestamp(reset, tz=UTC).astimezone()
+                    mins = max(1, round((reset - datetime.now(UTC).timestamp()) / 60))
                     hint = f"，预计 {mins} 分钟后恢复（{reset_local:%H:%M}）"
                 kind = "匿名共享 IP 配额" if "Authorization" not in self.session.headers else "Token 配额"
                 raise GitHubRateLimitError(
@@ -164,7 +162,7 @@ class GitHubClient:
         """抓取单个仓库近 `days` 天内更新的 Issues（排除 Pull Request）。"""
         log = progress_cb or (lambda msg: None)
         since = (
-            datetime.now(timezone.utc) - timedelta(days=days)
+            datetime.now(UTC) - timedelta(days=days)
         ).isoformat(timespec="seconds").replace("+00:00", "Z")
 
         issues: list[Issue] = []

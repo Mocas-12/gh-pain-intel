@@ -6,10 +6,12 @@
 
 **Monitor GitHub issue pain points → deep LLM semantic analysis → export market research reports in one click**
 
+[![CI](https://github.com/Mocas-12/gh-pain-intel/actions/workflows/ci.yml/badge.svg)](https://github.com/Mocas-12/gh-pain-intel/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.36+-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.62-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
 [![Multi-LLM](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?logo=openai&logoColor=white)](#-multi-llm-switching)
 [![GitHub API](https://img.shields.io/badge/Data-GitHub_Trending-181717?logo=github&logoColor=white)](#-daily-star-growth-board)
+[![License: MIT](https://img.shields.io/badge/License-MIT-10B981)](LICENSE)
 
 **[🌐 Live Dashboard (Streamlit Cloud)](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/)**
 
@@ -35,6 +37,7 @@ Read-only public data · for internal research use
 - [How to Create GITHUB_TOKEN](#-how-to-create-github_token)
 - [FAQ](#-faq)
 - [Compliance and Security](#-compliance-and-security)
+- [License](#-license)
 
 ## ✨ Features
 
@@ -115,10 +118,13 @@ gh-pain-intel/
 │   ├── ai_engine.py          # Analysis layer: concurrent classification → two-stage clustering → trend analysis (strict JSON + retries)
 │   ├── report.py             # Report layer: three-section Markdown assembly (numbers computed locally, verifiable)
 │   └── ui.py                 # UI layer: deep-space command-center style components (glassmorphism cards / gradient titles)
-├── tests/                    # Offline unit tests (27 cases, no network)
+├── tests/                    # Offline unit tests (31 cases, no network), enforced by CI
+├── .github/workflows/ci.yml  # GitHub Actions: ruff + unit tests (Python 3.11-3.13)
 ├── run_weekly.bat            # Windows scheduled-task script
 ├── e2e_run.py                # End-to-end smoke script
-└── requirements.txt
+├── pyproject.toml            # Project metadata + ruff lint config
+├── requirements.txt          # Runtime dependencies (version-pinned)
+└── requirements-dev.txt      # Dev/CI toolchain (runtime deps + ruff)
 ```
 
 ## 🚀 Quick Start
@@ -131,6 +137,7 @@ streamlit run app.py
 ```
 
 > For local runs, put your keys in a `.env` file at the project root (already gitignored); the engine loads it automatically at startup.
+> Contributor setup: `pip install -r requirements-dev.txt` (runtime deps + the ruff linter used by CI).
 
 | Command | Description |
 | --- | --- |
@@ -138,6 +145,7 @@ streamlit run app.py
 | `python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md` | Headless batching, great for scheduled tasks |
 | `python cli.py --provider gemini --repos ollama/ollama --days 7` | Switch models from the CLI |
 | `python -m unittest discover -s tests -v` | Run the offline unit tests |
+| `ruff check .` | Lint check (same as CI) |
 
 ## ⚙️ Configuration
 
@@ -226,6 +234,10 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 - 🔍 **Read-only** analysis of public data, producing **internal research reports** — never auto-posts to any third-party platform
 - ✍️ Quoted community text remains the copyright of its original authors
 - 🔑 Keys live only in a local `.env` (gitignored) or are injected server-side via Streamlit Cloud Secrets; the UI never echoes them back
+
+## 📄 License
+
+Released under the [MIT License](./LICENSE). Quoted community text remains the copyright of its original authors.
 
 ---
 

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gh-pain-intel"
+version = "0.2.0"
+description = "Mine GitHub issues for pain points — LLM semantic analysis, severity scoring, topic clustering & one-click market-research reports."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Mocas-12" }]
+keywords = ["github", "issues", "llm", "market-research", "streamlit"]
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# E4/E7/E9+pycodestyle 错误、F 逻辑错误、B 常见陷阱、UP 过时写法
+select = ["E4", "E7", "E9", "F", "B", "UP"]

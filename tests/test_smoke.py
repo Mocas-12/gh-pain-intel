@@ -115,8 +115,9 @@ class ConcurrentClassifyTest(unittest.TestCase):
         self.assertEqual(len(out), 5)
         # 顺序与输入一致（summary 序号对应输入顺序）
         self.assertEqual([r["summary"] for r in out], [f"s{i}" for i in range(5)])
-        # 串行需 >=1.5s，5 并发应远小于该值
-        self.assertLess(dt, 1.2, f"并发未生效，耗时 {dt:.2f}s")
+        # 5 批串行至少 5×0.3=1.5s；总耗时低于串行下限即证明并发重叠生效
+        # （阈值取串行下限本身而非更紧的值，避免慢 CI 机器上的线程启动抖动导致误报）
+        self.assertLess(dt, 1.5, f"并发未生效，耗时 {dt:.2f}s")
 
     def test_fallback_on_batch_failure(self):
         def failing(system, user, retries=2):

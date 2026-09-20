@@ -12,26 +12,35 @@ API Key 按优先级读取：调用方显式传入 → 环境变量 LLM_API_KEY 
 """
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import re
 import threading
 import time
-from typing import Callable
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
+
+from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 
 # 模块级会话：复用底层连接池（行为不变，仅避免每次请求重建连接）
 _SESSION = requests.Session()
 
-# 默认服务商：OpenRouter · Ox Alpha（可在调用时被 base_url/model 参数覆盖）
-DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = "stealth/ox-alpha"
-DEFAULT_API_KEY_ENV = "OPENROUTER_API_KEY"
+# 默认服务商：OpenRouter · Ox Alpha（可在调用时被 base_url/model 参数覆盖）。
+# 默认值统一从 src/llm_providers.py 注册表推导，避免多处硬编码产生漂移。
+_preset = PROVIDERS[DEFAULT_PROVIDER]
+DEFAULT_BASE_URL = _preset["base_url"]
+DEFAULT_MODEL = (_preset["models"] or [""])[0]
+DEFAULT_API_KEY_ENV = _preset["key_env"] or "LLM_API_KEY"
 
 VALID_CATEGORY = {"bug", "feature", "question", "doc", "other"}
 VALID_EMOTION = {"positive", "neutral", "negative", "angry"}
+
+
+class LLMHTTPError(RuntimeError):
+    """模型端点返回不可重试的 4xx 错误（鉴权失败、模型名无效、欠费等）。"""
+
 
 CLASSIFY_PROMPT = """你是资深开源社区分析师。下面是若干条 GitHub Issue 的原始文本。
 对每一条输出分类结果，严格返回 JSON 数组，不要任何多余文字：
@@ -147,10 +156,10 @@ class PainIntelEngine:
         return headers
 
     def chat(self, system: str, user: str) -> str:
-        """对话补全，内置 429/5xx 与网络抖动的指数退避重试（线程安全）。"""
+        """对话补全，内置 429/5xx 与网络抖动的指数退避重试（线程安全）；4xx 快速失败。"""
         delay = 2.0
         last_exc: Exception | None = None
-        for attempt in range(3):
+        for _ in range(3):
             try:
                 resp = _SESSION.post(
                     f"{self.base_url}/chat/completions",
@@ -171,6 +180,15 @@ class PainIntelEngine:
                     delay *= 2
                     last_exc = RuntimeError(f"HTTP {resp.status_code}")
                     continue
+                if resp.status_code >= 400:  # 鉴权/参数类错误，重试无意义，直接给出可读原因
+                    hint = ""
+                    if resp.status_code in (401, 403):
+                        hint = "（API Key 无效、欠费或无权访问该模型）"
+                    elif resp.status_code == 404:
+                        hint = "（请检查 base_url 是否为 OpenAI 兼容端点、模型名是否存在）"
+                    raise LLMHTTPError(
+                        f"模型端点返回 HTTP {resp.status_code}{hint}: {resp.text[:200]}"
+                    )
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"]
             except (requests.ConnectionError, requests.Timeout) as exc:
@@ -184,6 +202,8 @@ class PainIntelEngine:
         for _ in range(retries + 1):
             try:
                 return _extract_json(self.chat(system, user))
+            except LLMHTTPError:
+                raise  # 鉴权/参数类 4xx 重试无意义，原样上抛（错误信息可直接展示给用户）
             except Exception as exc:  # 解析失败 → 重试
                 last_exc = exc
                 time.sleep(1)

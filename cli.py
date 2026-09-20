@@ -35,7 +35,11 @@ def main() -> None:
     )
     ap.add_argument("--base-url", default=None, help="覆盖服务商预设端点（OpenAI 兼容）")
     ap.add_argument("--model", default=None, help="覆盖服务商预设模型")
-    ap.add_argument("--api-key", default=None, help="覆盖服务商预设 Key 环境变量")
+    ap.add_argument(
+        "--api-key",
+        default=None,
+        help="覆盖服务商预设 Key 环境变量（命令行参数会留在 shell 历史中，无人值守场景建议改用环境变量）",
+    )
     ap.add_argument(
         "--out-dir",
         default=None,

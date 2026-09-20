@@ -6,10 +6,12 @@
 
 **监控 GitHub Issue 痛点 → 大模型深度语义分析 → 一键导出市场研究报告**
 
+[![CI](https://github.com/Mocas-12/gh-pain-intel/actions/workflows/ci.yml/badge.svg)](https://github.com/Mocas-12/gh-pain-intel/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.36+-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.62-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
 [![Multi-LLM](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?logo=openai&logoColor=white)](#-多模型切换)
 [![GitHub API](https://img.shields.io/badge/Data-GitHub_Trending-181717?logo=github&logoColor=white)](#-每日-star-增幅榜)
+[![License: MIT](https://img.shields.io/badge/License-MIT-10B981)](LICENSE)
 
 **[🌐 在线看板（Streamlit Cloud）](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/)**
 
@@ -35,6 +37,7 @@
 - [如何创建 GITHUB_TOKEN](#-如何创建-github_token)
 - [常见问题](#-常见问题)
 - [合规与安全](#-合规与安全)
+- [开源许可](#-开源许可)
 
 ## ✨ 功能特性
 
@@ -113,10 +116,13 @@ gh-pain-intel/
 │   ├── ai_engine.py          # 分析层：并发分类 → 两阶段聚类 → 趋势研判（强制 JSON + 重试）
 │   ├── report.py             # 报告层：三大板块 Markdown 装配（数字本地实算，可复核）
 │   └── ui.py                 # UI 层：深空指挥中心风格组件（玻璃拟态卡片 / 渐变标题）
-├── tests/                    # 离线单元测试（27 个用例，不打网络）
+├── tests/                    # 离线单元测试（31 个用例，不打网络），CI 强制执行
+├── .github/workflows/ci.yml  # GitHub Actions：ruff + 单元测试（Python 3.11-3.13）
 ├── run_weekly.bat            # Windows 定时任务脚本
 ├── e2e_run.py                # 端到端冒烟脚本
-└── requirements.txt
+├── pyproject.toml            # 项目元数据 + ruff 静态检查配置
+├── requirements.txt          # 运行时依赖（锁定版本）
+└── requirements-dev.txt      # 开发/CI 工具链（含运行时依赖 + ruff）
 ```
 
 ## 🚀 快速开始
@@ -129,6 +135,7 @@ streamlit run app.py
 ```
 
 > 本地运行推荐把 Key 写入项目根目录 `.env`（已被 gitignore 排除），引擎启动时自动加载。
+> 贡献者/开发环境：`pip install -r requirements-dev.txt`（含运行时依赖与 CI 使用的 ruff）。
 
 | 命令 | 说明 |
 | --- | --- |
@@ -136,6 +143,7 @@ streamlit run app.py
 | `python cli.py --repos ollama/ollama,vllm-project/vllm --days 7 --out report.md` | 无头批处理，适合定时任务 |
 | `python cli.py --provider gemini --repos ollama/ollama --days 7` | CLI 切换其他模型 |
 | `python -m unittest discover -s tests -v` | 运行离线单元测试 |
+| `ruff check .` | 静态检查（与 CI 一致） |
 
 ## ⚙️ 配置说明
 
@@ -224,6 +232,10 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 - 🔍 对公开数据**只读**分析，产出**内部研究报告**，不向任何第三方平台自动发帖
 - ✍️ 引用的社区文本版权归原作者所有
 - 🔑 密钥仅存于本地 `.env`（gitignore 排除）或 Streamlit Cloud Secrets 服务端注入，界面不回显
+
+## 📄 开源许可
+
+本项目基于 [MIT License](./LICENSE) 开源。报告中引用的社区文本版权归原作者所有。
 
 ---
 
