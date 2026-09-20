@@ -37,6 +37,7 @@ Read-only public data · for internal research use
 - [How to Create GITHUB_TOKEN](#-how-to-create-github_token)
 - [FAQ](#-faq)
 - [Compliance and Security](#-compliance-and-security)
+- [Development & Quality](#-development--quality)
 - [License](#-license)
 
 ## ✨ Features
@@ -47,7 +48,7 @@ Read-only public data · for internal research use
 - 🔀 **Multi-LLM Switching**: 13 presets — OpenRouter / OpenAI / Gemini / Claude / DeepSeek / Kimi / Zhipu / Tongyi / Grok and more; any OpenAI-compatible endpoint plugs right in
 - 🔥 **Daily Star Growth Board**: homepage always shows GitHub's official Trending "stars today" Top 10, refreshed every day; add a repo to your analysis targets with one click
 - 📄 **One-Click Reports**: three-section Markdown market research reports — every number computed locally and verifiable
-- ⚡ **Concurrent Batching**: thread-pool concurrency for classification + exponential backoff on 429/5xx; failed batches fall back to defaults without breaking the pipeline
+- ⚡ **Concurrent Batching**: thread-pool concurrency for classification + exponential backoff on 429/5xx; failed batches fall back to defaults without breaking the pipeline, and invalid keys / wrong model names fail fast with a readable error
 - 🖥️ **Dual Entry Points**: interactive Streamlit dashboard + headless CLI batching (supports Windows scheduled tasks)
 
 ## 🧠 How It Works
@@ -229,11 +230,34 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 - CLI: <code>python cli.py --provider gemini --repos …</code>
 </details>
 
+<details>
+<summary><b>Analysis fails with HTTP 401/403</b></summary>
+
+- The API Key is invalid, out of credit, or has no access to the selected model — such errors fail fast and are reported as-is (never disguised as a "JSON parsing" failure)
+- UI: re-check the Key in "Model Settings" or switch provider; CLI: verify the matching environment variable (e.g. <code>DEEPSEEK_API_KEY</code>)
+</details>
+
+<details>
+<summary><b>Analysis fails with HTTP 404</b></summary>
+
+- Usually a wrong <code>base_url</code> or model name — make sure the endpoint speaks the OpenAI-compatible protocol and the model actually exists on that provider
+</details>
+
 ## 🔒 Compliance and Security
 
 - 🔍 **Read-only** analysis of public data, producing **internal research reports** — never auto-posts to any third-party platform
 - ✍️ Quoted community text remains the copyright of its original authors
 - 🔑 Keys live only in a local `.env` (gitignored) or are injected server-side via Streamlit Cloud Secrets; the UI never echoes them back
+
+## 🧪 Development & Quality
+
+Engineering quality is enforced by CI, not by discipline:
+
+- **CI**: every push / PR runs `ruff check` + the full offline unit suite (31 cases) on Python 3.11 / 3.12 / 3.13 — see [.github/workflows/ci.yml](.github/workflows/ci.yml)
+- **Lint**: [ruff](https://docs.astral.sh/ruff/) with rules `E4/E7/E9/F/B/UP`, configured in [pyproject.toml](pyproject.toml) — currently zero warnings; keep it that way
+- **Dependencies**: runtime versions are pinned in `requirements.txt` to the combination that passes the full suite; the dev/CI toolchain lives in `requirements-dev.txt`
+- **Python**: `>= 3.11` (dictated by pandas 3.x)
+- **E2E**: `python e2e_run.py` runs a real fetch + the complete model pipeline against `pandas-dev/pandas` (needs `OPENROUTER_API_KEY`; kept manual by design)
 
 ## 📄 License
 

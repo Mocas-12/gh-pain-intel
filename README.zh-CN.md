@@ -37,6 +37,7 @@
 - [如何创建 GITHUB_TOKEN](#-如何创建-github_token)
 - [常见问题](#-常见问题)
 - [合规与安全](#-合规与安全)
+- [开发与质量](#-开发与质量)
 - [开源许可](#-开源许可)
 
 ## ✨ 功能特性
@@ -47,7 +48,7 @@
 - 🔀 **多模型切换**：OpenRouter / OpenAI / Gemini / Claude / DeepSeek / Kimi / 智谱 / 通义 / Grok 等 13 家预设，任意 OpenAI 兼容端点即插即用
 - 🔥 **每日 Star 增幅榜**：主页常驻 GitHub 官方 Trending「stars today」增幅 Top 10，每天换血，一键追加分析目标
 - 📄 **一键报告**：三大板块 Markdown 市场研究报告，数字全部本地实算、可复核
-- ⚡ **并发批处理**：分类阶段线程池并发 + 429/5xx 指数退避，失败批次自动兜底不中断管线
+- ⚡ **并发批处理**：分类阶段线程池并发 + 429/5xx 指数退避，失败批次自动兜底不中断管线；Key 无效 / 模型名错误会快速失败并给出可读原因
 - 🖥️ **双入口**：Streamlit 交互看板 + 无头 CLI 批处理（支持 Windows 定时任务）
 
 ## 🧠 工作原理
@@ -227,11 +228,34 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 - CLI：<code>python cli.py --provider gemini --repos …</code>
 </details>
 
+<details>
+<summary><b>分析时报 HTTP 401/403</b></summary>
+
+- API Key 无效、欠费或无权访问所选模型——这类错误会快速失败并原样上报（不会被误报成「JSON 解析失败」）
+- 界面：在「模型设置」里核对 Key 或换服务商；CLI：检查对应环境变量（如 <code>DEEPSEEK_API_KEY</code>）
+</details>
+
+<details>
+<summary><b>分析时报 HTTP 404</b></summary>
+
+- 多为 <code>base_url</code> 或模型名填写错误——确认端点走 OpenAI 兼容协议、模型名在该服务商真实存在
+</details>
+
 ## 🔒 合规与安全
 
 - 🔍 对公开数据**只读**分析，产出**内部研究报告**，不向任何第三方平台自动发帖
 - ✍️ 引用的社区文本版权归原作者所有
 - 🔑 密钥仅存于本地 `.env`（gitignore 排除）或 Streamlit Cloud Secrets 服务端注入，界面不回显
+
+## 🧪 开发与质量
+
+工程质量由 CI 强制保证，而不是靠自觉：
+
+- **CI**：每次 push / PR 在 Python 3.11 / 3.12 / 3.13 上运行 `ruff check` + 全部离线单元测试（31 个用例），见 [.github/workflows/ci.yml](.github/workflows/ci.yml)
+- **静态检查**：[ruff](https://docs.astral.sh/ruff/) 规则 `E4/E7/E9/F/B/UP`，配置在 [pyproject.toml](pyproject.toml)，当前零告警，保持住
+- **依赖**：运行时版本锁定在 `requirements.txt`（当前通过全部测试的组合）；开发/CI 工具链在 `requirements-dev.txt`
+- **Python 版本**：`>= 3.11`（由 pandas 3.x 决定）
+- **端到端**：`python e2e_run.py` 对 `pandas-dev/pandas` 跑真实抓取 + 完整模型管线（需 `OPENROUTER_API_KEY`，按设计保持手动）
 
 ## 📄 开源许可
 
