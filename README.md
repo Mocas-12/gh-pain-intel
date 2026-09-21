@@ -46,7 +46,7 @@ Read-only public data · for internal research use
 - 🧩 **Topic Clustering**: two-stage semantic clustering (batch summarization → global merging), distilling 5~12 topic clusters with severity and representative quotes
 - 📈 **Trend Analysis**: developer sentiment distribution, rising hot topics, community risk signals, and product opportunities
 - 🔀 **Multi-LLM Switching**: 13 presets — OpenRouter / OpenAI / Gemini / Claude / DeepSeek / Kimi / Zhipu / Tongyi / Grok and more; any OpenAI-compatible endpoint plugs right in
-- 🔥 **Daily Star Growth Board**: homepage always shows GitHub's official Trending "stars today" Top 10, refreshed every day; add a repo to your analysis targets with one click
+- 🔥 **Daily Star Growth Board**: homepage always shows GitHub's official Trending "stars today" Top 10, refreshed every day with an on-demand manual refresh; add a repo to your analysis targets with one click
 - 📄 **One-Click Reports**: three-section Markdown market research reports — every number computed locally and verifiable
 - ⚡ **Concurrent Batching**: thread-pool concurrency for classification + exponential backoff on 429/5xx; failed batches fall back to defaults without breaking the pipeline, and invalid keys / wrong model names fail fast with a readable error
 - 🖥️ **Dual Entry Points**: interactive Streamlit dashboard + headless CLI batching (supports Windows scheduled tasks)
@@ -73,12 +73,13 @@ flowchart LR
 The "🔥 Today's STAR Growth TOP 10" card grid at the top of the homepage (expanded by default) shows the
 **stars gained in the last day** (`stars today`) from GitHub's official Trending, sorted in descending order by
 growth — not an all-time star ranking. The board refreshes every day, making it perfect for spotting repos that
-are taking off right now. Click ➕ on a card to add the repo to your analysis targets with one click.
+are taking off right now. Click 🔄 Refresh next to the title to force a re-fetch bypassing the cache, and click ➕
+on a card to add the repo to your analysis targets with one click.
 
 | Feature | Details |
 | --- | --- |
 | Data source | https://github.com/trending?since=daily (scraped from the page; consumes no GitHub API quota, no token needed) |
-| Refresh cadence | Cached by UTC date; fetched once on the first app open each day |
+| Refresh cadence | Cached by UTC date; fetched once on the first app open each day — the "🔄 Refresh" button next to the title forces a re-fetch anytime |
 | Fallback | If the page structure changes, shows "board temporarily unavailable" without affecting other features |
 
 ## 🔀 Multi-LLM Switching
@@ -206,7 +207,7 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 <summary><b>The board shows "temporarily unavailable"</b></summary>
 
 - Caused by GitHub Trending page-structure changes or network hiccups
-- Other features are unaffected; refresh the page later and retry — the day's cache is not impacted
+- Other features are unaffected; click the "🔄 Refresh" button next to the board title to retry — a failed refresh keeps and shows the previous cached data
 </details>
 
 <details>

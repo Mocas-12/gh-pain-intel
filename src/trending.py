@@ -91,9 +91,10 @@ def parse_trending_html(page_html: str) -> list[dict]:
     return out[:TOP_N]
 
 
-def get_star_gainers() -> list[dict]:
+def get_star_gainers(force: bool = False) -> list[dict]:
     """获取今日 Star 增幅 Top 10：优先读当日缓存，否则抓取 Trending 页并落盘。
 
+    force=True 时跳过当日缓存直接重新抓取（成功后覆盖缓存文件，失败则保留旧缓存）。
     Raises RuntimeError 当请求失败或页面解析为空时（由调用方决定如何降级展示）。
     """
     timeout = 20
@@ -101,7 +102,7 @@ def get_star_gainers() -> list[dict]:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = CACHE_DIR / f"trending_daily_{tag}.json"
 
-    if cache_file.exists():
+    if not force and cache_file.exists():
         try:
             data = json.loads(cache_file.read_text(encoding="utf-8"))
             if isinstance(data, list):

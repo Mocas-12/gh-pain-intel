@@ -45,18 +45,37 @@ def _add_repo(repo: str) -> None:
 try:
 
     @st.cache_data(ttl=21600, show_spinner=False)
-    def _load_hot():
-        return get_star_gainers()
+    def _load_hot(force: bool = False):
+        return get_star_gainers(force=force)
 
     hot_repos = _load_hot()
 except Exception as exc:
     st.caption(f"⚠️ 榜单暂时不可用：{exc}")
     hot_repos = []
 
-section_head(
-    "🔥 今日 STAR 增幅 TOP 10",
-    "GitHub 官方 Trending · 最近一天新增星标 · 每日更新",
-)
+head_col, refresh_col = st.columns([0.9, 0.1], vertical_alignment="center")
+with head_col:
+    section_head(
+        "🔥 今日 STAR 增幅 TOP 10",
+        "GitHub 官方 Trending · 最近一天新增星标 · 每日更新",
+    )
+if refresh_col.button(
+    "🔄 刷新",
+    key="refresh_hot",
+    help="绕过缓存，重新抓取 GitHub Trending 榜单",
+    use_container_width=True,
+):
+    _load_hot.clear()  # 清掉 6 小时 TTL 的 Streamlit 缓存
+    with st.spinner("正在重新拉取 GitHub Trending…"):
+        try:
+            _load_hot(force=True)  # force=True 绕过当日磁盘缓存，强制重新抓取
+        except Exception as exc:
+            st.session_state["hot_refresh_error"] = str(exc)
+    st.rerun()
+
+if st.session_state.get("hot_refresh_error"):
+    st.warning("⚠️ 刷新失败，当前展示的仍是上次缓存数据：" + st.session_state["hot_refresh_error"])
+    st.session_state["hot_refresh_error"] = None
 
 if hot_repos:
     for start in range(0, len(hot_repos), 2):  # 两列卡片栅格，按名次左右、自上而下排列
