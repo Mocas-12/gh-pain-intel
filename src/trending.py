@@ -133,3 +133,12 @@ def get_star_gainers(force: bool = False) -> list[dict]:
     except OSError:
         pass  # 缓存写入失败不影响本次结果返回
     return data
+
+
+def last_updated() -> datetime | None:
+    """当日榜单缓存的落盘时间（近似最近一次抓取时间）；尚无缓存时返回 None。"""
+    cache_file = CACHE_DIR / f"trending_daily_{day_tag()}.json"
+    try:
+        return datetime.fromtimestamp(cache_file.stat().st_mtime)
+    except OSError:
+        return None

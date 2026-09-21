@@ -20,7 +20,7 @@ from src.ai_engine import PainIntelEngine
 from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
-from src.trending import get_star_gainers
+from src.trending import get_star_gainers, last_updated
 from src.ui import gain_card, hero, inject, section_head, stat_cards, theme_card
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
@@ -53,25 +53,29 @@ except Exception as exc:
     st.caption(f"⚠️ 榜单暂时不可用：{exc}")
     hot_repos = []
 
-head_col, refresh_col = st.columns([0.9, 0.1], vertical_alignment="center")
+head_col, refresh_col = st.columns([0.95, 0.05], vertical_alignment="center")
 with head_col:
-    section_head(
-        "🔥 今日 STAR 增幅 TOP 10",
-        "GitHub 官方 Trending · 最近一天新增星标 · 每日更新",
-    )
+    ts = last_updated()
+    sub = "GitHub 官方 Trending · 最近一天新增星标 · 每日更新"
+    if ts:
+        sub += f" · 更新于 {ts:%H:%M}"
+    section_head("🔥 今日 STAR 增幅 TOP 10", sub)
 if refresh_col.button(
-    "🔄 刷新",
+    "↻\uFE0E",  # U+FE0E 强制文本渲染，避免彩色 emoji 与主题色冲突
     key="refresh_hot",
     help="绕过缓存，重新抓取 GitHub Trending 榜单",
-    use_container_width=True,
 ):
     _load_hot.clear()  # 清掉 6 小时 TTL 的 Streamlit 缓存
-    with st.spinner("正在重新拉取 GitHub Trending…"):
+    with st.spinner("正在重新拉取 GitHub Trending（约 1~3 秒）…"):
         try:
             _load_hot(force=True)  # force=True 绕过当日磁盘缓存，强制重新抓取
+            st.session_state["hot_toast"] = True
         except Exception as exc:
             st.session_state["hot_refresh_error"] = str(exc)
     st.rerun()
+
+if st.session_state.pop("hot_toast", False):
+    st.toast("✅ 榜单已刷新", icon="🔄")
 
 if st.session_state.get("hot_refresh_error"):
     st.warning("⚠️ 刷新失败，当前展示的仍是上次缓存数据：" + st.session_state["hot_refresh_error"])

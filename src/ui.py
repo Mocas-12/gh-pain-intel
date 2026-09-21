@@ -163,11 +163,11 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
   background:rgba(34,211,238,.18); border-color:rgba(34,211,238,.6);
   box-shadow:0 0 12px rgba(34,211,238,.35);
 }
-/* 榜单标题右侧刷新按钮：窄列内的小号 ghost 胶囊，
+/* 榜单标题右侧刷新按钮：与卡片 ➕ 同款的小方块 ghost 图标钮（收窄内边距、宽度贴内容），
    借 st-key-* 包装类精准命中，覆盖全局渐变大按钮样式 */
 .st-key-refresh_hot .stButton button {
-  min-width:0; padding:5px 14px; font-size:13px;
-  border:1px solid rgba(34,211,238,.35); border-radius:999px;
+  width:auto; min-width:0; min-height:0; padding:4px 11px; font-size:17px; font-weight:700; line-height:1.2;
+  border:1px solid rgba(34,211,238,.35); border-radius:10px;
   background:rgba(34,211,238,.08); color:#67e8f9; box-shadow:none;
 }
 .st-key-refresh_hot .stButton button:hover {
