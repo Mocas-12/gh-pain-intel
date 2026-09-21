@@ -17,11 +17,11 @@ import plotly.express as px
 import streamlit as st
 
 from src.ai_engine import PainIntelEngine
-from src.llm_providers import PROVIDERS
+from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 from src.report import SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 from src.trending import get_star_gainers, last_updated
-from src.ui import gain_card, guide_steps, hero, inject, section_head, stat_cards, theme_card
+from src.ui import gain_card, hero, inject, section_head, stat_cards, theme_card
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
 inject()
@@ -56,11 +56,10 @@ except Exception as exc:
 head_col, refresh_col = st.columns([0.95, 0.05], vertical_alignment="center")
 with head_col:
     ts = last_updated()
-    section_head(
-        "今日 STAR 增幅 TOP 10",
-        "GitHub 官方 Trending 统计的最近一天新增星标",
-        meta=f"更新于 {ts:%H:%M}" if ts else "",
-    )
+    sub = "GitHub 官方 Trending · 最近一天新增星标 · 每日更新"
+    if ts:
+        sub += f" · 更新于 {ts:%H:%M}"
+    section_head("🔥 今日 STAR 增幅 TOP 10", sub)
 if refresh_col.button(
     "↻\uFE0E",  # U+FE0E 强制文本渲染，避免彩色 emoji 与主题色冲突
     key="refresh_hot",
@@ -83,13 +82,12 @@ if st.session_state.get("hot_refresh_error"):
     st.session_state["hot_refresh_error"] = None
 
 if hot_repos:
-    max_gained = max(int(r.get("gained", 0)) for r in hot_repos)
     for start in range(0, len(hot_repos), 2):  # 两列卡片栅格，按名次左右、自上而下排列
         pair = hot_repos[start : start + 2]
         cells = st.columns(2, gap="small")
         for cell, (rank, r) in zip(cells, enumerate(pair, start=start + 1), strict=False):
             info, add = cell.columns([9, 1], vertical_alignment="center")
-            info.markdown(gain_card(r, rank, max_gained), unsafe_allow_html=True)
+            info.markdown(gain_card(r, rank), unsafe_allow_html=True)
             add.button(
                 "➕",
                 key=f"add_{r['repo']}",
@@ -197,7 +195,7 @@ with st.sidebar:
         max_workers = col_w.slider("并发请求数", 1, 8, 4)
         st.caption("⚡ 并发批处理可大幅提升分类速度；但并发过高会触发平台限流(429)，退避重试反而变慢")
 
-run_btn = st.button("开始抓取与分析", type="primary", use_container_width=True)
+run_btn = st.button("🚀 开始抓取与分析", type="primary", use_container_width=True)
 
 # ---------------- 会话状态 ----------------
 for key in ("result", "scrape_meta", "errors"):
@@ -344,18 +342,16 @@ if st.session_state.result:
 
     stat_cards(
         [
-            ("分析样本", str(total), "#22d3ee",
-             f"条 · 覆盖 {len({c['issue'].repo for c in classified})} 个仓库"),
-            ("缺陷占比", pct_str(bugs, total), "#f87171", f"即 {bugs} 条归为 bug"),
-            ("功能诉求", pct_str(feats, total), "#34d399", f"即 {feats} 条归为 feature"),
-            ("负面情绪", pct_str(neg, total), "#fbbf24", f"即 {neg} 条负面或愤怒"),
-            ("整体情绪", str(trends.get("overall_sentiment", "N/A")), "#8b5cf6",
-             f"由 {meta['model']} 判定"),
+            ("分析样本", f"{total}<small> 条</small>", "#22d3ee"),
+            ("缺陷占比", pct_str(bugs, total), "#f87171"),
+            ("功能诉求", pct_str(feats, total), "#34d399"),
+            ("负面情绪", pct_str(neg, total), "#fbbf24"),
+            ("整体情绪", trends.get("overall_sentiment", "N/A"), "#8b5cf6"),
         ]
     )
 
     tab_pain, tab_feat, tab_trend, tab_report = st.tabs(
-        ["高频痛点", "功能诉求", "情绪与趋势", "研究报告"]
+        ["🐞 高频痛点", "🚀 功能诉求", "📈 情绪与趋势", "📄 研究报告"]
     )
 
     # ----- 板块一 -----
@@ -392,7 +388,7 @@ if st.session_state.result:
         for t in feat_themes:
             st.markdown(theme_card(t), unsafe_allow_html=True)
         if trends.get("opportunities"):
-            st.info("**产品机会点**：" + "；".join(trends["opportunities"]))
+            st.info("**🎯 产品机会点**：" + "；".join(trends["opportunities"]))
 
     # ----- 板块三 -----
     with tab_trend:
@@ -425,9 +421,9 @@ if st.session_state.result:
         fig.update_yaxes(gridcolor="rgba(148,163,184,.12)")
         st.plotly_chart(fig, use_container_width=True)
         if trends.get("hot_topics"):
-            st.markdown("**热度上升话题**：" + "；".join(trends["hot_topics"]))
+            st.markdown("**🔥 热度上升话题**：" + "；".join(trends["hot_topics"]))
         if trends.get("risks"):
-            st.warning("**风险信号**：" + "；".join(trends["risks"]))
+            st.warning("**⚠️ 风险信号**：" + "；".join(trends["risks"]))
         st.success(f"**趋势研判**：{trends.get('trend_summary', 'N/A')}")
 
     # ----- 报告 -----
@@ -435,7 +431,7 @@ if st.session_state.result:
         md = build_report(meta, result)
         fname = "pain-intel-" + meta["generated_at"].replace(":", "").replace(" ", "_") + ".md"
         st.download_button(
-            "一键下载 Markdown 研究报告",
+            "⬇️ 一键下载 Markdown 研究报告",
             md,
             file_name=fname,
             mime="text/markdown",
@@ -445,15 +441,13 @@ if st.session_state.result:
         st.markdown(md)
 else:
     hero("STANDBY", "等待情报采集指令", "在侧边栏完成配置后，点击「开始抓取与分析」启动分析管线")
-    guide_steps(
+    current_provider = PROVIDERS.get(
+        st.session_state.get("llm_provider", DEFAULT_PROVIDER), {}
+    ).get("short", "Ox Alpha")
+    stat_cards(
         [
-            ("配置目标仓库",
-             "左侧边栏每行填一个 owner/repo；云端部署建议同时配置 GITHUB_TOKEN，"
-             "配额从 60 次/小时提升至 5000 次/小时"),
-            ("启动抓取与分析",
-             "点击「开始抓取与分析」，抓取 Issue 后经多模型语义分类与两阶段聚类，"
-             "约需 1~3 分钟"),
-            ("导出研究报告",
-             "完成后在「研究报告」页一键下载 Markdown，所有数字本地实算、可复核"),
+            ("系统状态", "待命", "#22d3ee"),
+            ("数据源", "GitHub API", "#8b5cf6"),
+            ("分析引擎", current_provider, "#34d399"),
         ]
     )

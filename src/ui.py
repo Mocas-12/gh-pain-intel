@@ -12,10 +12,11 @@ import streamlit as st
 ACCENT = {"cyan": "#22d3ee", "red": "#f87171", "amber": "#fbbf24"}
 
 _SEV_CLASS = {"高": "sev-high", "中": "sev-mid", "低": "sev-low"}
+_CAT_ICON = {"bug": "🐞", "feature": "🚀", "question": "❓", "doc": "📚", "other": "🔎"}
 
 _CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
 
 :root {
   --bg:#0a0e14; --panel:#11161f; --panel2:#151c28;
@@ -30,7 +31,7 @@ _CSS = """
     var(--bg);
 }
 html, body, .stApp, [class*="css"] {
-  font-family:'Inter','Noto Sans SC','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
   color: var(--txt);
 }
 .block-container { padding-top: 1.6rem; max-width: 1400px; }
@@ -62,7 +63,8 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
 .hero h1 {
   font-size:2.15rem; font-weight:900; line-height:1.15; margin:0 0 .3rem 0;
-  color:#f1f5f9; letter-spacing:.01em;
+  background:linear-gradient(92deg,#f8fafc 20%,#67e8f9 55%,#a78bfa 90%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
 }
 .hero-sub { color:var(--sub); font-size:.92rem; letter-spacing:.02em; }
 
@@ -72,10 +74,12 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
   flex:1 1 160px; min-width:158px; position:relative; overflow:hidden;
   background:linear-gradient(180deg,var(--panel2) 0%,rgba(17,22,31,.55) 100%);
   border:1px solid var(--line); border-radius:14px; padding:15px 17px 13px;
+  transition:transform .18s ease, border-color .18s ease;
 }
+.stat-card:hover { transform:translateY(-2px); border-color:rgba(148,163,184,.3); }
 .stat-card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  background:var(--ac);
+  background:var(--ac); box-shadow:0 0 14px var(--ac);
 }
 .stat-num {
   font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700;
@@ -84,9 +88,8 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
 .stat-num small { font-size:15px; color:var(--sub); font-weight:500; }
 .stat-label {
   margin-top:5px; font-size:10.5px; font-weight:700;
-  letter-spacing:.08em; color:var(--sub);
+  letter-spacing:.14em; text-transform:uppercase; color:var(--sub);
 }
-.stat-note { margin-top:2px; font-size:11px; color:var(--sub); opacity:.78; }
 
 /* ---------- 主题洞察卡 ---------- */
 .theme-card {
@@ -113,50 +116,41 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
 .section-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
   margin:.15rem 0 .6rem; }
 .section-title {
-  font-size:1.28rem; font-weight:900; letter-spacing:.02em; color:#f1f5f9;
+  font-size:1.28rem; font-weight:900; letter-spacing:.03em;
+  background:linear-gradient(92deg,#fbbf24 0%,#f8fafc 55%,#67e8f9 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
 }
-.section-sub { color:var(--sub); font-size:.78rem; letter-spacing:.02em; }
-.section-meta { margin-left:auto; font-family:'JetBrains Mono',monospace;
-  font-size:11.5px; color:var(--sub); }
+.section-sub { color:var(--sub); font-size:.78rem; letter-spacing:.06em; }
 .gain-card {
   position:relative; overflow:hidden; height:100%;
   background:linear-gradient(180deg,var(--panel2) 0%,rgba(17,22,31,.5) 100%);
   border:1px solid var(--line); border-radius:14px;
-  padding:12px 14px 12px 60px;
+  padding:12px 14px 11px 60px;
+  transition:transform .18s ease, border-color .18s ease;
 }
+.gain-card:hover { transform:translateY(-2px); border-color:rgba(148,163,184,.32); }
 .gain-card::before {
   content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
-  background:var(--rc,#22d3ee);
+  background:var(--rc,#22d3ee); box-shadow:0 0 12px var(--rc,#22d3ee);
 }
-/* 前三名奖牌感：加宽光柱、放大名次数字——全页唯一的发光重点 */
-.gain-card.medal::before { width:4px; box-shadow:0 0 12px var(--rc); }
 .gain-rank {
   position:absolute; left:16px; top:50%; transform:translateY(-50%);
-  font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700;
-  color:var(--rc,#22d3ee);
+  font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:700;
+  color:var(--rc,#22d3ee); text-shadow:0 0 14px var(--rc,#22d3ee);
 }
-.gain-card.medal .gain-rank { font-size:25px; text-shadow:0 0 14px var(--rc); }
-.gain-head { display:flex; align-items:center; gap:8px; min-width:0; }
 .gain-name {
   font-size:1.02rem; font-weight:700; color:#f1f5f9;
   text-decoration:none; word-break:break-all;
 }
 .gain-name:hover { color:#67e8f9; }
-.gain-lang {
-  flex:none; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:500;
-  color:var(--sub); border:1px solid var(--line); border-radius:6px; padding:.12em .5em;
-}
 .gain-meta {
-  margin-top:4px; display:flex; justify-content:space-between; align-items:baseline;
-  font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--sub);
+  margin-top:4px; font-family:'JetBrains Mono',monospace;
+  font-size:12px; color:var(--sub);
 }
 .gain-meta b { color:#34d399; font-weight:700; font-size:13px; }
-.gain-bar { margin-top:6px; height:3px; border-radius:2px;
-  background:rgba(148,163,184,.14); overflow:hidden; }
-.gain-bar i { display:block; height:100%; background:var(--rc,#22d3ee); border-radius:2px; }
 .gain-desc {
-  margin-top:6px; color:var(--sub); font-size:.84rem; line-height:1.5;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  margin-top:4px; color:var(--sub); font-size:.84rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 /* 榜单卡右侧 ➕ 图标按钮：按钮列很窄且带 help tooltip 包装层，
    须压缩内边距并单独着色，否则图标被裁切、只剩默认深色底 */
@@ -189,23 +183,11 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; }
   font-weight:600; color:var(--sub);
 }
 .stTabs [aria-selected="true"] {
-  color:#67e8f9 !important; background:rgba(34,211,238,.10);
-  border-color:rgba(34,211,238,.55); box-shadow:none;
+  color:#0a0e14 !important; background:linear-gradient(92deg,#67e8f9,#a78bfa);
+  border-color:transparent; box-shadow:0 0 18px rgba(103,232,249,.25);
 }
 .stTabs [data-baseweb="tab-highlight"],
 .stTabs [data-baseweb="tab-border"] { display:none; }
-
-/* ---------- 空状态引导步骤 ---------- */
-.guide-grid { display:flex; gap:13px; flex-wrap:wrap; margin:.35rem 0 1rem; }
-.guide-card {
-  flex:1 1 220px;
-  background:linear-gradient(180deg,var(--panel2) 0%,rgba(17,22,31,.55) 100%);
-  border:1px solid var(--line); border-radius:14px; padding:16px 18px;
-}
-.guide-step { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700;
-  color:#67e8f9; }
-.guide-title { margin-top:6px; font-size:1rem; font-weight:700; color:#f1f5f9; }
-.guide-desc { margin-top:4px; color:var(--sub); font-size:.85rem; line-height:1.55; }
 
 /* ---------- 输入控件 ---------- */
 .stButton > button {
@@ -242,73 +224,51 @@ def hero(badge: str, title: str, sub: str) -> None:
     )
 
 
-def stat_cards(items: list[tuple[str, str, str, str]]) -> None:
-    """一行发光统计卡。items: [(标签, 数值, 强调色, 补充说明)]，说明可为空串。"""
+def stat_cards(items: list[tuple[str, str, str]]) -> None:
+    """一行发光统计卡。items: [(标签, 数值, 强调色)]。"""
     cells = "".join(
         f'<div class="stat-card" style="--ac:{color}">'
         f'<div class="stat-num">{_html.escape(value)}</div>'
-        f'<div class="stat-label">{_html.escape(label)}</div>'
-        + (f'<div class="stat-note">{_html.escape(note)}</div>' if note else "")
-        + "</div>"
-        for label, value, color, note in items
+        f'<div class="stat-label">{_html.escape(label)}</div></div>'
+        for label, value, color in items
     )
     st.markdown(f'<div class="stat-grid">{cells}</div>', unsafe_allow_html=True)
 
 
-def section_head(title: str, sub: str = "", meta: str = "") -> None:
-    """区块标题：大字标题 + 灰色说明；meta 右对齐（如更新时间）。"""
+def section_head(title: str, sub: str = "") -> None:
+    """区块标题：渐变大字 + 灰色说明。"""
     sub_html = f'<span class="section-sub">{_html.escape(sub)}</span>' if sub else ""
-    meta_html = f'<span class="section-meta">{_html.escape(meta)}</span>' if meta else ""
     st.markdown(
         '<div class="section-head">'
-        f'<span class="section-title">{_html.escape(title)}</span>{sub_html}{meta_html}'
+        f'<span class="section-title">{_html.escape(title)}</span>{sub_html}'
         "</div>",
         unsafe_allow_html=True,
     )
 
 
-def gain_card(item: dict, rank: int, max_gained: int) -> str:
-    """Star 增幅榜单卡 HTML。前三名有金银铜奖牌感，其余为青色；
-    gain-bar 以当榜最大增量为基准可视化名次。"""
+def gain_card(item: dict, rank: int) -> str:
+    """Star 增幅榜单卡 HTML。rank 1-3 有金银铜强调色，其余为青色。"""
     esc = _html.escape
-    rank_color = {1: "#fbbf24", 2: "#cbd5e1", 3: "#fb923c"}.get(rank, "#22d3ee")
+    rank_color = {1: "#fbbf24", 2: "#e2e8f0", 3: "#fb923c"}.get(rank, "#22d3ee")
     desc = (item.get("description") or "").strip()
-    lang = (item.get("language") or "").strip()
-    gained = int(item.get("gained", 0))
-    pct = max(4, round(gained / max_gained * 100)) if max_gained > 0 else 0
     return (
-        f'<div class="gain-card{" medal" if rank <= 3 else ""}" style="--rc:{rank_color}">'
+        f'<div class="gain-card" style="--rc:{rank_color}">'
         f'<div class="gain-rank">{rank:02d}</div>'
-        f'<div class="gain-head">'
         f'<a class="gain-name" href="{esc(item.get("url", "#"))}" target="_blank">'
         f'{esc(item.get("repo", "?"))}</a>'
-        + (f'<span class="gain-lang">{esc(lang)}</span>' if lang and lang != "-" else "")
-        + "</div>"
-        f'<div class="gain-meta"><span><b>+{gained:,}</b> ⭐ 今日</span>'
-        f'<span>全站 {int(item.get("stars", 0)):,}</span></div>'
-        f'<div class="gain-bar"><i style="width:{pct}%"></i></div>'
+        f'<div class="gain-meta"><b>+{int(item.get("gained", 0)):,}</b> ⭐ 今日'
+        f' · 全站 {int(item.get("stars", 0)):,}'
+        f' · {esc(item.get("language") or "-")}</div>'
         + (f'<div class="gain-desc">{esc(desc)}</div>' if desc else "")
         + "</div>"
     )
-
-
-def guide_steps(steps: list[tuple[str, str]]) -> None:
-    """空状态的三步行动指引。steps: [(标题, 说明)]。"""
-    cells = "".join(
-        '<div class="guide-card">'
-        f'<div class="guide-step">{i:02d}</div>'
-        f'<div class="guide-title">{_html.escape(title)}</div>'
-        f'<div class="guide-desc">{_html.escape(desc)}</div>'
-        "</div>"
-        for i, (title, desc) in enumerate(steps, start=1)
-    )
-    st.markdown(f'<div class="guide-grid">{cells}</div>', unsafe_allow_html=True)
 
 
 def theme_card(theme: dict) -> str:
     """单个主题洞察卡片的 HTML。"""
     sev = str(theme.get("severity", "中"))
     sev_cls = _SEV_CLASS.get(sev, "sev-mid")
+    icon = _CAT_ICON.get(str(theme.get("category", "")), "◆")
     accent = ACCENT["red"] if sev == "高" else ACCENT["amber"] if sev == "中" else ACCENT["cyan"]
     quotes = "".join(
         f'<div class="quote">💬 {_html.escape(q)}</div>'
@@ -317,6 +277,7 @@ def theme_card(theme: dict) -> str:
     return (
         '<div class="theme-card">'
         '<div class="theme-head">'
+        f'<span>{icon}</span>'
         f'<span class="theme-name">{_html.escape(str(theme["name"]))}</span>'
         f'<span class="badge {sev_cls}">{_html.escape(sev)}风险</span>'
         f'<span class="freq">× {theme.get("frequency", "?")} 条相关 Issue</span>'
