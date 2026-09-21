@@ -1,13 +1,19 @@
 """每日 Star 增幅榜的离线单元测试（不打网络）。"""
 from __future__ import annotations
 
+import json
 import os
+import shutil
 import sys
+import tempfile
 import unittest
 from datetime import datetime, UTC
+from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import src.trending as trending
 from src.trending import day_tag, parse_trending_html
 
 
@@ -91,6 +97,59 @@ class ParseTrendingHtmlTest(unittest.TestCase):
 
     def test_empty_html_returns_empty(self):
         self.assertEqual(parse_trending_html("<html></html>"), [])
+
+
+class GetStarGainersCacheTest(unittest.TestCase):
+    """磁盘缓存与 force 语义：False 读缓存、True 绕过重抓、失败保留旧缓存。
+
+    看板的「🔄 刷新」按钮依赖 force=True 穿透当日磁盘缓存（当日缓存与
+    Streamlit 内存缓存双层结构见 src/trending.py 模块注释），这里是契约测试。
+    """
+
+    def setUp(self):
+        self._orig_dir = trending.CACHE_DIR
+        self._tmp = tempfile.mkdtemp()
+        trending.CACHE_DIR = Path(self._tmp)
+
+    def tearDown(self):
+        trending.CACHE_DIR = self._orig_dir
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    def _seed(self) -> Path:
+        cache = trending.CACHE_DIR / f"trending_daily_{trending.day_tag()}.json"
+        cache.write_text(
+            json.dumps([{"repo": "fake/repo", "stars": 1, "gained": 1,
+                         "language": "Py", "description": "", "url": "#"}]),
+            encoding="utf-8",
+        )
+        return cache
+
+    def test_force_false_reads_disk_without_network(self):
+        self._seed()
+
+        def _boom(*args, **kwargs):
+            raise AssertionError("缓存命中时不应发起网络请求")
+
+        with mock.patch.object(trending._SESSION, "get", _boom):
+            data = trending.get_star_gainers()
+        self.assertEqual(data[0]["repo"], "fake/repo")
+
+    def test_force_true_bypasses_cache_and_overwrites_on_success(self):
+        cache = self._seed()
+        page = "<html>" + article("real/repo", 500, 42) + "</html>"
+        resp = mock.Mock(status_code=200, text=page)
+        with mock.patch.object(trending._SESSION, "get", return_value=resp):
+            data = trending.get_star_gainers(force=True)
+        self.assertEqual(data[0]["repo"], "real/repo")
+        disk = json.loads(cache.read_text(encoding="utf-8"))
+        self.assertEqual(disk[0]["repo"], "real/repo")  # 成功后覆盖当日缓存
+
+    def test_force_true_failure_keeps_old_cache(self):
+        cache = self._seed()
+        with mock.patch.object(trending._SESSION, "get", side_effect=OSError("offline")):
+            with self.assertRaises(OSError):
+                trending.get_star_gainers(force=True)
+        self.assertTrue(cache.exists())  # 失败不破坏旧缓存，看板可继续展示上次数据
 
 
 if __name__ == "__main__":

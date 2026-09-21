@@ -202,8 +202,8 @@ class GitHubClient:
                         url=item.get("html_url", ""),
                     )
                 )
-                if len(issues) >= max_issues:
-                    break
+                # 注意：不在此处按 max_issues 截断——页请求已发出，整页收满再统一
+                # 按热度排序截断，才能真正保留最有信息量的样本（页序 ≠ 热度序）
             page += 1
 
         # 按讨论热度排序（评论 + 反应），优先保留最有信息量的样本
