@@ -300,31 +300,30 @@ class PainIntelEngine:
         workers = max(1, min(max_workers or self.max_workers, self.max_workers))
         total = len(batches)
 
-        def work(idx: int, batch: list) -> tuple[int, list[dict]]:
+        def work(batch: list) -> list[dict]:
             payload = "\n\n".join(
                 f"### id={i}\n{iss.flat_text[:1000]}" for i, iss in enumerate(batch)
             )
-            return idx, self._parse_classification(batch, self.chat_json(CLASSIFY_PROMPT, payload))
+            return self._parse_classification(batch, self.chat_json(CLASSIFY_PROMPT, payload))
 
         results: dict[int, list[dict]] = {}
         failed: set[int] = set()
-        done = [0]
+        done = 0
 
         with ThreadPoolExecutor(max_workers=min(workers, len(batches))) as pool:
-            fut_map = {pool.submit(work, i, b): i for i, b in enumerate(batches)}
+            fut_map = {pool.submit(work, b): i for i, b in enumerate(batches)}
             for fut in as_completed(fut_map):
                 idx = fut_map[fut]
                 try:
-                    _, recs = fut.result()
-                    results[idx] = recs
+                    results[idx] = fut.result()
                 except Exception as exc:  # 单批失败不影响其他批次
                     failed.add(idx)
                     self.last_failures.append(f"批次{idx}: {str(exc)[:150]}")
                 finally:
                     # as_completed 循环在调用线程内串行执行，共享状态无需加锁
-                    done[0] += 1
+                    done += 1
                     if progress_cb:
-                        progress_cb(done[0], total)
+                        progress_cb(done, total)
 
         ordered: list[dict] = []
         for idx, batch in enumerate(batches):
