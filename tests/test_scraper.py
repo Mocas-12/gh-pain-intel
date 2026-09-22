@@ -186,7 +186,7 @@ class FetchManyTest(unittest.TestCase):
         def fake_fetch(repo, *args, **kwargs):
             if repo == "bad/repo":
                 raise ValueError("仓库不存在或无权访问: bad/repo")
-            return [gh_issue(1)] and []
+            return []
 
         with mock.patch.object(client, "fetch_repo_issues", side_effect=fake_fetch):
             issues, errors = fetch_many(client, ["good/repo", "bad/repo"])

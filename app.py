@@ -18,7 +18,7 @@ import streamlit as st
 
 from src.ai_engine import PainIntelEngine
 from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
-from src.report import SEVERITY_ORDER, build_report, pct_str
+from src.report import EMO_ZH, SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 from src.trending import get_star_gainers, last_updated
 from src.ui import gain_card, hero, inject, section_head, stat_cards, theme_card
@@ -393,7 +393,6 @@ if st.session_state.result:
     # ----- 板块三 -----
     with tab_trend:
         emo_order = ["positive", "neutral", "negative", "angry"]
-        emo_zh = {"positive": "😊 正面", "neutral": "😐 中性", "negative": "🙁 负面", "angry": "😠 愤怒"}
         emo_counts = [sum(1 for c in classified if c["emotion"] == k) for k in emo_order]
         emo_colors = {
             "positive": "#34d399",
@@ -402,10 +401,10 @@ if st.session_state.result:
             "angry": "#f87171",
         }
         fig = px.bar(
-            x=[emo_zh[k] for k in emo_order],
+            x=[EMO_ZH[k] for k in emo_order],
             y=emo_counts,
-            color=[emo_zh[k] for k in emo_order],
-            color_discrete_map={emo_zh[k]: emo_colors[k] for k in emo_order},
+            color=[EMO_ZH[k] for k in emo_order],
+            color_discrete_map={EMO_ZH[k]: emo_colors[k] for k in emo_order},
         )
         fig.update_layout(
             template="plotly_dark",

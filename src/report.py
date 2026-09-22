@@ -32,12 +32,12 @@ def _theme_table(themes: list[dict]) -> str:
     return "\n".join(rows)
 
 
-def _quotes_block(themes: list[dict], limit_per_theme: int = 2) -> str:
+def _quotes_block(themes: list[dict]) -> str:
     out: list[str] = []
     for t in themes:
         if t["representatives"]:
             out.append(f"**{t['name']}**")
-            out.extend(f"- 💬 {q}" for q in t["representatives"][:limit_per_theme])
+            out.extend(f"- 💬 {q}" for q in t["representatives"][:2])
     return "\n".join(out)
 
 

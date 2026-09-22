@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -71,9 +70,9 @@ TREND_PROMPT = """你是技术市场分析师。基于以下统计与主题归�
 只依据给定材料，不要编造数据。"""
 
 
-def _load_dotenv(path: str | None = None) -> None:
+def _load_dotenv() -> None:
     """极简 .env 加载器：把 KEY=VALUE 注入环境变量（已存在的变量不覆盖）。"""
-    env_file = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+    env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
     try:
         with open(env_file, encoding="utf-8") as f:
             for line in f:
@@ -309,7 +308,6 @@ class PainIntelEngine:
 
         results: dict[int, list[dict]] = {}
         failed: set[int] = set()
-        lock = threading.Lock()
         done = [0]
 
         with ThreadPoolExecutor(max_workers=min(workers, len(batches))) as pool:
@@ -323,10 +321,10 @@ class PainIntelEngine:
                     failed.add(idx)
                     self.last_failures.append(f"批次{idx}: {str(exc)[:150]}")
                 finally:
-                    with lock:
-                        done[0] += 1
-                        if progress_cb:
-                            progress_cb(done[0], total)
+                    # as_completed 循环在调用线程内串行执行，共享状态无需加锁
+                    done[0] += 1
+                    if progress_cb:
+                        progress_cb(done[0], total)
 
         ordered: list[dict] = []
         for idx, batch in enumerate(batches):

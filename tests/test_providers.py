@@ -8,7 +8,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.ai_engine import PainIntelEngine
+from src.ai_engine import LLMHTTPError, PainIntelEngine
 from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 
 
@@ -89,8 +89,6 @@ class TransportErrorTest(unittest.TestCase):
         return resp
 
     def test_401_raises_llm_http_error_without_retry(self):
-        from src.ai_engine import LLMHTTPError, PainIntelEngine
-
         eng = PainIntelEngine("https://api.example.com/v1", "m", "k")
         fake_sess = mock.Mock()
         fake_sess.post.return_value = self._resp(401, '{"error":{"message":"bad key"}}')
@@ -102,8 +100,6 @@ class TransportErrorTest(unittest.TestCase):
         self.assertIn("API Key", str(ctx.exception))
 
     def test_chat_json_propagates_http_error_immediately(self):
-        from src.ai_engine import LLMHTTPError, PainIntelEngine
-
         eng = PainIntelEngine("https://api.example.com/v1", "m", "k")
         fake_sess = mock.Mock()
         fake_sess.post.return_value = self._resp(404, "model not found")
@@ -113,8 +109,6 @@ class TransportErrorTest(unittest.TestCase):
         self.assertEqual(fake_sess.post.call_count, 1)
 
     def test_5xx_retries_then_raises(self):
-        from src.ai_engine import PainIntelEngine
-
         eng = PainIntelEngine("https://api.example.com/v1", "m", "k")
         fake_sess = mock.Mock()
         fake_sess.post.side_effect = [self._resp(500) for _ in range(3)]
@@ -127,8 +121,6 @@ class TransportErrorTest(unittest.TestCase):
         self.assertIn("连续失败", str(ctx.exception))
 
     def test_success_parses_openai_shape(self):
-        from src.ai_engine import PainIntelEngine
-
         eng = PainIntelEngine("https://api.example.com/v1", "m", "k")
         fake_sess = mock.Mock()
         ok = self._resp(200)
