@@ -6,7 +6,9 @@ REM  报告输出: %PROJECT_DIR%\reports\pain_intel_report_YYYYMMDD_HHMM.md
 REM ============================================================
 
 REM ---------- 配置区（按需修改） ----------
-set "PROJECT_DIR=C:\Users\wangqixiu\gh-pain-intel"
+REM 项目目录自动取本脚本所在位置，不再硬编码
+set "PROJECT_DIR=%~dp0"
+if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
 set "REPOS=ollama/ollama,langchain-ai/langchain"
 set "DAYS=7"
 set "MAX_PER_REPO=120"
