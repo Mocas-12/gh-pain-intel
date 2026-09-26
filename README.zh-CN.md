@@ -15,7 +15,7 @@
 
 **[🌐 在线看板（Streamlit Cloud）](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/)**
 
-[English](./README.md) | **简体中文**
+[English](./README.md) | **简体中文** | [日本語](./README.ja-JP.md)
 
 *填入仓库 → 抓取近期 Issue → 多模型分析 → 导出结构化报告*
 

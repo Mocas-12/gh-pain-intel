@@ -15,7 +15,7 @@
 
 **[🌐 Live Dashboard (Streamlit Cloud)](https://gh-pain-intel-8egvafff3urokytzxa63x2.streamlit.app/)**
 
-**English** | [简体中文](./README.zh-CN.md)
+**English** | [简体中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
 
 *Enter repositories → fetch recent issues → multi-model analysis → export structured reports*
 
