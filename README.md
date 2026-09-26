@@ -33,7 +33,7 @@ Read-only public data · for internal research use
 - [Multi-LLM Switching](#-multi-llm-switching)
 - [Project Structure](#-project-structure)
 - [Quick Start](#-quick-start)
-- [Configuration](#-configuration)
+- [Configuration](#️-configuration)
 - [How to Create GITHUB_TOKEN](#-how-to-create-github_token)
 - [FAQ](#-faq)
 - [Compliance and Security](#-compliance-and-security)
