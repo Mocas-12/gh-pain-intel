@@ -120,7 +120,7 @@ gh-pain-intel/
 │   ├── ai_engine.py          # Analysis layer: concurrent classification → two-stage clustering → trend analysis (strict JSON + retries)
 │   ├── report.py             # Report layer: three-section Markdown assembly (numbers computed locally, verifiable)
 │   └── ui.py                 # UI layer: deep-space command-center style components (glassmorphism cards / gradient titles)
-├── tests/                    # Offline unit tests (31 cases, no network), enforced by CI
+├── tests/                    # Offline unit tests (50 cases, no network), enforced by CI
 ├── .github/workflows/ci.yml  # GitHub Actions: ruff + unit tests (Python 3.11-3.13)
 ├── run_weekly.bat            # Windows scheduled-task script
 ├── e2e_run.py                # End-to-end smoke script
@@ -254,7 +254,7 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 
 Engineering quality is enforced by CI, not by discipline:
 
-- **CI**: every push / PR runs `ruff check` + the full offline unit suite (31 cases) on Python 3.11 / 3.12 / 3.13 — see [.github/workflows/ci.yml](.github/workflows/ci.yml)
+- **CI**: every push / PR runs `ruff check` + the full offline unit suite (50 cases) on Python 3.11 / 3.12 / 3.13 — see [.github/workflows/ci.yml](.github/workflows/ci.yml)
 - **Lint**: [ruff](https://docs.astral.sh/ruff/) with rules `E4/E7/E9/F/B/UP`, configured in [pyproject.toml](pyproject.toml) — currently zero warnings; keep it that way
 - **Dependencies**: runtime versions are pinned in `requirements.txt` to the combination that passes the full suite; the dev/CI toolchain lives in `requirements-dev.txt`
 - **Python**: `>= 3.11` (dictated by pandas 3.x)

@@ -118,7 +118,7 @@ gh-pain-intel/
 │   ├── ai_engine.py          # 分析层：并发分类 → 两阶段聚类 → 趋势研判（强制 JSON + 重试）
 │   ├── report.py             # 报告层：三大板块 Markdown 装配（数字本地实算，可复核）
 │   └── ui.py                 # UI 层：深空指挥中心风格组件（玻璃拟态卡片 / 渐变标题）
-├── tests/                    # 离线单元测试（31 个用例，不打网络），CI 强制执行
+├── tests/                    # 离线单元测试（50 个用例，不打网络），CI 强制执行
 ├── .github/workflows/ci.yml  # GitHub Actions：ruff + 单元测试（Python 3.11-3.13）
 ├── run_weekly.bat            # Windows 定时任务脚本
 ├── e2e_run.py                # 端到端冒烟脚本
@@ -252,7 +252,7 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 
 工程质量由 CI 强制保证，而不是靠自觉：
 
-- **CI**：每次 push / PR 在 Python 3.11 / 3.12 / 3.13 上运行 `ruff check` + 全部离线单元测试（31 个用例），见 [.github/workflows/ci.yml](.github/workflows/ci.yml)
+- **CI**：每次 push / PR 在 Python 3.11 / 3.12 / 3.13 上运行 `ruff check` + 全部离线单元测试（50 个用例），见 [.github/workflows/ci.yml](.github/workflows/ci.yml)
 - **静态检查**：[ruff](https://docs.astral.sh/ruff/) 规则 `E4/E7/E9/F/B/UP`，配置在 [pyproject.toml](pyproject.toml)，当前零告警，保持住
 - **依赖**：运行时版本锁定在 `requirements.txt`（当前通过全部测试的组合）；开发/CI 工具链在 `requirements-dev.txt`
 - **Python 版本**：`>= 3.11`（由 pandas 3.x 决定）
