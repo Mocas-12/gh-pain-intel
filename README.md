@@ -2,7 +2,7 @@
 
 <img src="assets/logo.svg" width="96" alt="gh-pain-intel Logo" />
 
-# 🛰️ gh-pain-intel · Open-Source Community Pain-Point Intelligence
+# gh-pain-intel
 
 **Monitor GitHub issue pain points → deep LLM semantic analysis → export market research reports in one click**
 
