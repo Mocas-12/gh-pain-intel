@@ -133,24 +133,43 @@ with st.sidebar:
         value=_get_secret("GITHUB_TOKEN"),
         help="云端部署强烈建议配置：Streamlit 共享出口 IP 的匿名配额（60次/时）极易耗尽；配置后提升至 5000 次/小时",
     )
-    with st.expander("🧠 模型设置（多服务商可切换）"):
+    def _sync_provider() -> None:
+        """切换服务商时，自动带出该服务商的官方端点与默认模型。"""
+        p = PROVIDERS[st.session_state["llm_provider"]]
+        st.session_state["llm_base_url"] = p["base_url"]
+        if p["models"]:
+            st.session_state["llm_model"] = p["models"][0]
 
-        def _sync_provider() -> None:
-            """切换服务商时，自动带出该服务商的官方端点与默认模型。"""
-            p = PROVIDERS[st.session_state["llm_provider"]]
-            st.session_state["llm_base_url"] = p["base_url"]
-            if p["models"]:
-                st.session_state["llm_model"] = p["models"][0]
+    provider_id = st.selectbox(
+        "服务商",
+        list(PROVIDERS),
+        format_func=lambda k: PROVIDERS[k]["label"],
+        key="llm_provider",
+        on_change=_sync_provider,
+    )
+    preset = PROVIDERS[provider_id]
+    st.session_state.setdefault("llm_base_url", preset["base_url"])
 
-        provider_id = st.selectbox(
-            "服务商",
-            list(PROVIDERS),
-            format_func=lambda k: PROVIDERS[k]["label"],
-            key="llm_provider",
-            on_change=_sync_provider,
+    # API Key 是最高频的凭据，放在折叠外一眼可见；获取链接直达、免翻帮助气泡
+    if preset["key_env"] is None:  # 目前仅本地 Ollama 免鉴权
+        api_key = "ollama"  # 占位 Bearer，引擎要求非空
+        st.caption("🏠 当前服务商无需 API Key")
+    else:
+        api_key = st.text_input(
+            f"{preset['short']} API Key",
+            type="password",
+            value=_get_secret(preset["key_env"]),
+            placeholder=preset["key_hint"] or "选填",
+            help=f"云端可在 Secrets 配置 {preset['key_env']}，选中该服务商后自动带入",
         )
-        preset = PROVIDERS[provider_id]
-        st.session_state.setdefault("llm_base_url", preset["base_url"])
+        if not api_key:
+            st.caption("⚠️ 尚未填写，开始分析前请先填入")
+        if preset["key_url"]:
+            st.caption(f"[获取 {preset['short']} Key ↗]({preset['key_url']})")
+        else:
+            st.caption("可选，仅当你的端点需要鉴权时填写")
+
+    with st.expander("🧠 高级设置（端点 · 模型 · 并发）"):
 
         base_url = st.text_input(
             "API 端点（OpenAI 兼容）",
@@ -176,23 +195,6 @@ with st.sidebar:
             )
         else:
             model = st.text_input("模型名称", key="llm_model_custom")
-
-        if preset["key_env"] is None:  # 目前仅本地 Ollama 免鉴权
-            api_key = "ollama"  # 占位 Bearer，引擎要求非空
-            st.caption("🏠 当前服务商无需 API Key")
-        else:
-            key_help = (
-                f"获取地址：{preset['key_url']}；云端可在 Secrets 配置 {preset['key_env']}，选中该服务商后自动带入"
-                if preset["key_url"]
-                else "可选，仅当你的端点需要鉴权时填写"
-            )
-            api_key = st.text_input(
-                f"{preset['short']} API Key",
-                type="password",
-                value=_get_secret(preset["key_env"]),
-                placeholder=preset["key_hint"] or "选填",
-                help=key_help,
-            )
 
         if preset.get("note"):
             st.caption(f"ℹ️ {preset['note']}")
