@@ -88,6 +88,12 @@ on a card to add the repo to your analysis targets with one click.
 **OpenAI Chat Completions compatible protocol**. Switching a provider automatically fills in its official
 endpoint and default model; see the input help text for where to get each key.
 
+**Zero-cost analysis**: models ending in `:free` in the OpenRouter preset are free — just register at
+OpenRouter for a key, no top-up needed. The free tier is tightly rate-limited (about 20 req/min and
+50 req/day per OpenRouter's docs); a default analysis run (~14 requests) fits comfortably. Batches that
+fail due to free-tier throttling fall back automatically. To skip keys entirely, run a local Ollama
+(key-free provider).
+
 | Provider | Endpoint | Key environment variable |
 | --- | --- | --- |
 | OpenRouter (default · Ox Alpha) | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
@@ -222,6 +228,14 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 
 - Reasoning models like OpenAI's o-series only accept the default temperature
 - Fix: set Temperature back to 1.0 in "Model Settings"
+</details>
+
+<details>
+<summary><b>Run analysis at zero cost (or key-free)</b></summary>
+
+- Zero cost: pick OpenRouter as the provider and choose a preset ending in <code>:free</code> (register for a free key, no top-up)
+- Free tier: about 20 req/min and 50 req/day; failed batches fall back automatically — lower concurrency and batch size for stability
+- Key-free: install Ollama locally and pick the "Ollama (local models)" provider — no key of any kind required
 </details>
 
 <details>

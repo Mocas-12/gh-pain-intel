@@ -25,3 +25,6 @@ Thumbs.db
 # 环境变量文件（防泄密）
 .env
 .env.*
+
+# Mimosa 安全插件的本地会话状态
+.mimosa/

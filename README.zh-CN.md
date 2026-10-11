@@ -86,6 +86,10 @@ flowchart LR
 「模型设置」可在主流大模型之间一键切换：全走 **OpenAI Chat Completions 兼容协议**，
 切换服务商时自动带出官方端点与默认模型，Key 的获取地址见输入框帮助文字。
 
+**零成本分析**：OpenRouter 预设里 `:free` 结尾的模型免费——免费注册 OpenRouter 取 Key 即可，无需充值。
+免费档限流较严（约 20 次/分、50 次/天，以官方文档为准），单次默认分析约 14 次请求够用；
+免费模型偶发限流导致的失败批次会自动兜底。完全不申请任何 Key 的替代：本地 Ollama（免 Key）。
+
 | 服务商 | 端点 | Key 环境变量 |
 | --- | --- | --- |
 | OpenRouter（默认 · Ox Alpha） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
@@ -220,6 +224,14 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 
 - OpenAI o 系列等推理模型只接受默认温度
 - 解决：把「模型设置」中的 Temperature 调回 1.0
+</details>
+
+<details>
+<summary><b>想零成本（或免 Key）跑分析</b></summary>
+
+- 零费用：服务商选 OpenRouter，模型选 <code>:free</code> 结尾的预设（免费注册取 Key，无需充值）
+- 免费档限流约 20 次/分、50 次/天；批次失败会自动兜底，降低并发与批大小更稳
+- 免 Key：本地安装 Ollama，服务商选「Ollama（本地模型）」即可，完全无需申请任何 Key
 </details>
 
 <details>

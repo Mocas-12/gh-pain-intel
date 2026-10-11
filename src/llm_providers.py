@@ -19,8 +19,16 @@ PROVIDERS: dict[str, dict] = {
         "label": "OpenRouter（默认 · Ox Alpha）",
         "short": "OpenRouter",
         "base_url": "https://openrouter.ai/api/v1",
+        # :free 结尾 = 零费用模型（仍需免费注册获取 Key）。免费名单随平台轮换，
+        # 以下为 2026-10-11 经 /api/v1/models 实时核验的通用大上下文型号；
+        # 刷新方法：curl -s https://openrouter.ai/api/v1/models 再过滤 ":free"
         "models": [
             "stealth/ox-alpha",
+            "thinkingmachines/inkling-small:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "google/gemma-4-31b-it:free",
+            "nvidia/nemotron-3-ultra-550b-a55b:free",
+            "thinkingmachines/inkling:free",
             "openai/gpt-4o-mini",
             "anthropic/claude-sonnet-4.5",
             "google/gemini-2.5-flash",
@@ -29,6 +37,8 @@ PROVIDERS: dict[str, dict] = {
         "key_env": "OPENROUTER_API_KEY",
         "key_url": "https://openrouter.ai/keys",
         "key_hint": "sk-or-v1-…",
+        "note": "🆓 模型名以 :free 结尾即零费用（仍需免费注册获取 Key）；免费档限流较严，"
+                "个别批次可能失败并自动兜底，追求稳定请选付费模型",
     },
     "openai": {
         "label": "OpenAI（GPT 系列）",
