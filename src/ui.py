@@ -199,14 +199,17 @@ section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p { mar
 /* 关掉 React Aria 自带的选中下划线，选中态由玻璃亮块表达 */
 [data-testid="stTab"] .react-aria-SelectionIndicator { display:none; }
 
-/* ---------- 主按钮：苹果式单色白胶囊（黑字白底，深色页面上最高对比、最克制） ---------- */
+/* ---------- 主按钮：玻璃质感胶囊（磨砂半透 + 背景模糊，与卡片同体系） ---------- */
 .stButton > button {
-  width:100%; border:none; border-radius:980px; font-weight:600;
-  background:#f5f5f7; color:#0d0d0f;
-  box-shadow:0 4px 18px rgba(0,0,0,.35);
-  transition:filter .15s ease, transform .15s ease;
+  width:100%; border:1px solid var(--line-strong); border-radius:980px;
+  font-weight:600; color:var(--txt);
+  background:rgba(255,255,255,.12);
+  -webkit-backdrop-filter:blur(24px) saturate(150%);
+  backdrop-filter:blur(24px) saturate(150%);
+  box-shadow:0 8px 30px rgba(0,0,0,.35);
+  transition:background .15s ease;
 }
-.stButton > button:hover { filter:brightness(.92); }
+.stButton > button:hover { background:rgba(255,255,255,.2); }
 /* ---------- 输入控件 ---------- */
 .stDownloadButton > button {
   width:100%; border:1px solid var(--line-strong); border-radius:980px;
