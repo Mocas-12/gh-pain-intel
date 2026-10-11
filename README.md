@@ -94,6 +94,11 @@ OpenRouter for a key, no top-up needed. The free tier is tightly rate-limited (a
 fail due to free-tier throttling fall back automatically. To skip keys entirely, run a local Ollama
 (key-free provider).
 
+**Zero-config for visitors**: once the owner sets `OPENROUTER_API_KEY` in Streamlit Cloud Secrets
+(locally: `.env`), every visitor can run analyses immediately — no key field appears for them; they
+can still override with their own key under "Use your own key". Note that the server-side key's
+free-tier quota is shared across all visitors.
+
 | Provider | Endpoint | Key environment variable |
 | --- | --- | --- |
 | OpenRouter (default · GLM-5.3 Flash) | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |

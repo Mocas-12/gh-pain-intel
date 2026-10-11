@@ -150,24 +150,41 @@ with st.sidebar:
     preset = PROVIDERS[provider_id]
     st.session_state.setdefault("llm_base_url", preset["base_url"])
 
-    # API Key 是最高频的凭据，放在折叠外一眼可见；获取链接直达、免翻帮助气泡
+    # API Key 解析优先级：服务端预置（Secrets/.env）→ 访客自填。
+    # 预置存在时访客零配置——这正是「打开即用、无需 API Key」的产品初衷；
+    # Key 只存在于服务端（st.secrets / 环境变量），永远不会展示给访客。
     if preset["key_env"] is None:  # 目前仅本地 Ollama 免鉴权
         api_key = "ollama"  # 占位 Bearer，引擎要求非空
         st.caption("🏠 当前服务商无需 API Key")
     else:
-        api_key = st.text_input(
-            f"{preset['short']} API Key",
-            type="password",
-            value=_get_secret(preset["key_env"]),
-            placeholder=preset["key_hint"] or "选填",
-            help=f"云端可在 Secrets 配置 {preset['key_env']}，选中该服务商后自动带入",
-        )
-        if not api_key:
-            st.caption("⚠️ 尚未填写，开始分析前请先填入")
-        if preset["key_url"]:
-            st.caption(f"[获取 {preset['short']} Key ↗]({preset['key_url']})")
+        server_key = _get_secret(preset["key_env"])
+        if server_key:
+            api_key = server_key
+            st.caption(f"✅ 已内置 {preset['short']} Key，开箱即用，无需填写")
+            with st.expander("使用自己的 Key"):
+                own_key = st.text_input(
+                    f"{preset['short']} API Key（覆盖内置）",
+                    type="password",
+                    key="own_api_key",
+                    placeholder="留空则使用内置 Key",
+                )
+                if preset["key_url"]:
+                    st.caption(f"[获取 {preset['short']} Key ↗]({preset['key_url']})")
+                if own_key and own_key.strip():
+                    api_key = own_key.strip()
         else:
-            st.caption("可选，仅当你的端点需要鉴权时填写")
+            api_key = st.text_input(
+                f"{preset['short']} API Key",
+                type="password",
+                placeholder=preset["key_hint"] or "选填",
+                help=f"云端可在 Secrets 配置 {preset['key_env']}，配置后访客将零配置使用",
+            )
+            if not api_key:
+                st.caption("⚠️ 尚未填写，开始分析前请先填入")
+            if preset["key_url"]:
+                st.caption(f"[获取 {preset['short']} Key ↗]({preset['key_url']})")
+            else:
+                st.caption("可选，仅当你的端点需要鉴权时填写")
 
     with st.expander("🧠 高级设置（端点 · 模型 · 并发）"):
 
