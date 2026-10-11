@@ -349,11 +349,11 @@ if st.session_state.result:
 
     stat_cards(
         [
-            ("分析样本", f"{total}<small> 条</small>", "#22d3ee"),
-            ("缺陷占比", pct_str(bugs, total), "#f87171"),
-            ("功能诉求", pct_str(feats, total), "#34d399"),
-            ("负面情绪", pct_str(neg, total), "#fbbf24"),
-            ("整体情绪", trends.get("overall_sentiment", "N/A"), "#8b5cf6"),
+            ("分析样本", f"{total}<small> 条</small>", "#0a84ff"),
+            ("缺陷占比", pct_str(bugs, total), "#ff453a"),
+            ("功能诉求", pct_str(feats, total), "#30d158"),
+            ("负面情绪", pct_str(neg, total), "#ff9f0a"),
+            ("整体情绪", trends.get("overall_sentiment", "N/A"), "#bf5af2"),
         ]
     )
 
@@ -402,10 +402,10 @@ if st.session_state.result:
         emo_order = ["positive", "neutral", "negative", "angry"]
         emo_counts = [sum(1 for c in classified if c["emotion"] == k) for k in emo_order]
         emo_colors = {
-            "positive": "#34d399",
-            "neutral": "#64748b",
-            "negative": "#fbbf24",
-            "angry": "#f87171",
+            "positive": "#30d158",
+            "neutral": "#636366",
+            "negative": "#ff9f0a",
+            "angry": "#ff453a",
         }
         fig = px.bar(
             x=[EMO_ZH[k] for k in emo_order],
@@ -423,8 +423,8 @@ if st.session_state.result:
             yaxis_title=None,
             xaxis_title=None,
         )
-        fig.update_xaxes(gridcolor="rgba(148,163,184,.12)")
-        fig.update_yaxes(gridcolor="rgba(148,163,184,.12)")
+        fig.update_xaxes(gridcolor="rgba(255,255,255,.08)")
+        fig.update_yaxes(gridcolor="rgba(255,255,255,.08)")
         st.plotly_chart(fig, use_container_width=True)
         if trends.get("hot_topics"):
             st.markdown("**🔥 热度上升话题**：" + "；".join(trends["hot_topics"]))
@@ -452,8 +452,8 @@ else:
     ).get("short", "Ox Alpha")
     stat_cards(
         [
-            ("系统状态", "待命", "#22d3ee"),
-            ("数据源", "GitHub API", "#8b5cf6"),
-            ("分析引擎", current_provider, "#34d399"),
+            ("系统状态", "待命", "#0a84ff"),
+            ("数据源", "GitHub API", "#bf5af2"),
+            ("分析引擎", current_provider, "#30d158"),
         ]
     )

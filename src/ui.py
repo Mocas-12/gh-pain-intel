@@ -1,6 +1,8 @@
 """UI 层：自定义样式组件库（Streamlit HTML/CSS 注入）。
 
-设计语言：深空背景 + 霓虹点缀 + 玻璃拟态卡片 + 等宽数字，营造终端指挥中心质感。
+设计语言：Apple 深色玻璃——中性近黑背景 + 白色磨砂玻璃卡片（backdrop-blur）+
+发丝级描边 + iOS 系统色点缀 + 分段控件 Tab + 系统字体栈。无霓虹、无渐变字、
+无发光阴影；交互反馈只用玻璃亮度与轻位移。
 注意：本文件中的 CSS 使用普通字符串拼接（非 f-string），避免花括号转义问题。
 """
 from __future__ import annotations
@@ -9,199 +11,204 @@ import html as _html
 
 import streamlit as st
 
-ACCENT = {"cyan": "#22d3ee", "red": "#f87171", "amber": "#fbbf24"}
+ACCENT = {"cyan": "#0a84ff", "red": "#ff453a", "amber": "#ff9f0a"}
 
 _SEV_CLASS = {"高": "sev-high", "中": "sev-mid", "低": "sev-low"}
 _CAT_ICON = {"bug": "🐞", "feature": "🚀", "question": "❓", "doc": "📚", "other": "🔎"}
 
 _CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
-
 :root {
-  --bg:#0a0e14; --panel:#11161f; --panel2:#151c28;
-  --line:rgba(148,163,184,.14); --txt:#e2e8f0; --sub:#8b98ad;
+  --bg:#0e0e11; --panel:rgba(255,255,255,.055); --panel-strong:rgba(255,255,255,.085);
+  --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.14);
+  --txt:#f5f5f7; --sub:#a1a1a6; --faint:#6e6e73;
+  --blue:#0a84ff; --green:#30d158; --orange:#ff9f0a; --red:#ff453a;
 }
 
 /* ---------- 全局 ---------- */
 .stApp {
   background:
-    radial-gradient(1100px 520px at 85% -8%, rgba(34,211,238,.09), transparent 60%),
-    radial-gradient(900px 480px at 8% 108%, rgba(139,92,246,.08), transparent 55%),
+    radial-gradient(1200px 560px at 82% -10%, rgba(10,132,255,.07), transparent 62%),
+    radial-gradient(900px 480px at 6% 110%, rgba(191,90,242,.05), transparent 58%),
     var(--bg);
 }
 html, body, .stApp, [class*="css"] {
-  font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',
+    'Segoe UI',system-ui,sans-serif;
   color: var(--txt);
+  -webkit-font-smoothing:antialiased;
 }
-.block-container { padding-top: 1.6rem; max-width: 1400px; }
+.block-container { padding-top:1.7rem; max-width:1400px; }
 #MainMenu, footer { visibility:hidden; }
 header[data-testid="stHeader"] { background:transparent; }
-hr { border-color: var(--line); }
+hr { border-color:var(--line); }
+::selection { background:rgba(10,132,255,.35); }
+::-webkit-scrollbar { width:10px; height:10px; }
+::-webkit-scrollbar-thumb {
+  background:rgba(255,255,255,.16); border-radius:8px;
+  border:3px solid transparent; background-clip:content-box;
+}
+::-webkit-scrollbar-track { background:transparent; }
+
+/* ---------- 玻璃面板基元 ---------- */
+.glass, .stat-card, .theme-card, .gain-card {
+  background:var(--panel);
+  -webkit-backdrop-filter:blur(24px) saturate(150%);
+  backdrop-filter:blur(24px) saturate(150%);
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:0 8px 30px rgba(0,0,0,.35);
+}
 
 /* ---------- 侧边栏 ---------- */
 section[data-testid="stSidebar"] {
-  background:linear-gradient(180deg,#0d1522 0%,#0a0e14 100%);
+  background:rgba(18,18,21,.72);
+  -webkit-backdrop-filter:blur(28px) saturate(150%);
+  backdrop-filter:blur(28px) saturate(150%);
   border-right:1px solid var(--line);
 }
 section[data-testid="stSidebar"] * { color:var(--txt); }
-section[data-testid="stSidebar"] hr { margin:.4rem 0; }
+section[data-testid="stSidebar"] hr { margin:.4rem 0; border-color:var(--line); }
 
 /* ---------- Hero 头部 ---------- */
 .hero { padding:.4rem 0 .2rem 0; }
 .hero-badge {
-  display:inline-flex; align-items:center; gap:.45em;
-  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
-  letter-spacing:.22em; color:var(--accent-c,#22d3ee);
-  border:1px solid rgba(34,211,238,.35); border-radius:999px;
-  padding:.32em .95em; margin-bottom:.7em;
-  background:rgba(34,211,238,.06);
-  text-shadow:0 0 12px rgba(34,211,238,.5);
+  display:inline-flex; align-items:center; gap:.5em;
+  font-size:11px; font-weight:600; letter-spacing:.14em;
+  color:var(--sub);
+  border:1px solid var(--line); border-radius:999px;
+  padding:.34em 1em; margin-bottom:.75em;
+  background:var(--panel);
 }
-.hero-dot { width:7px;height:7px;border-radius:50%;background:#34d399;
-  box-shadow:0 0 8px #34d399; animation:pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+.hero-dot { width:7px; height:7px; border-radius:50%; background:var(--green);
+  animation:pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+@media (prefers-reduced-motion: reduce) {
+  .hero-dot { animation:none; }
+  .stat-card, .theme-card, .gain-card { transition:none; }
+}
 .hero h1 {
-  font-size:2.15rem; font-weight:900; line-height:1.15; margin:0 0 .3rem 0;
-  background:linear-gradient(92deg,#f8fafc 20%,#67e8f9 55%,#a78bfa 90%);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
+  font-size:2.1rem; font-weight:700; line-height:1.18; margin:0 0 .35rem 0;
+  color:var(--txt); letter-spacing:-.02em;
 }
-.hero-sub { color:var(--sub); font-size:.92rem; letter-spacing:.02em; }
+.hero-sub { color:var(--sub); font-size:.92rem; letter-spacing:0; }
 
 /* ---------- 统计卡 ---------- */
 .stat-grid { display:flex; gap:13px; flex-wrap:wrap; margin:.35rem 0 1rem 0; }
-.stat-card {
-  flex:1 1 160px; min-width:158px; position:relative; overflow:hidden;
-  background:linear-gradient(180deg,var(--panel2) 0%,rgba(17,22,31,.55) 100%);
-  border:1px solid var(--line); border-radius:14px; padding:15px 17px 13px;
-  transition:transform .18s ease, border-color .18s ease;
-}
-.stat-card:hover { transform:translateY(-2px); border-color:rgba(148,163,184,.3); }
-.stat-card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  background:var(--ac); box-shadow:0 0 14px var(--ac);
-}
+.stat-card { flex:1 1 160px; min-width:158px; padding:16px 18px 14px; }
 .stat-num {
-  font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700;
-  color:#f8fafc; letter-spacing:-.01em;
+  font-size:27px; font-weight:600; color:var(--txt);
+  letter-spacing:-.02em; font-variant-numeric:tabular-nums;
 }
 .stat-num small { font-size:15px; color:var(--sub); font-weight:500; }
-.stat-label {
-  margin-top:5px; font-size:10.5px; font-weight:700;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--sub);
-}
+.stat-label { margin-top:5px; font-size:12px; font-weight:500; color:var(--sub); }
 
 /* ---------- 主题洞察卡 ---------- */
-.theme-card {
-  background:linear-gradient(180deg,var(--panel2) 0%,rgba(17,22,31,.5) 100%);
-  border:1px solid var(--line); border-radius:14px;
-  padding:16px 19px; margin-bottom:13px;
-}
+.theme-card { padding:16px 19px; margin-bottom:13px; }
 .theme-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.theme-name { font-size:1.06rem; font-weight:700; color:#f1f5f9; }
+.theme-name { font-size:1.05rem; font-weight:600; color:var(--txt); letter-spacing:-.01em; }
 .badge {
-  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
-  padding:.25em .7em; border-radius:999px; border:1px solid;
+  font-size:11px; font-weight:600;
+  padding:.25em .75em; border-radius:999px; border:1px solid;
 }
-.freq { margin-left:auto; color:var(--sub); font-size:12px;
-  font-family:'JetBrains Mono',monospace; }
-.sev-high { color:#fca5a5; border-color:rgba(248,113,113,.4); background:rgba(248,113,113,.09); }
-.sev-mid  { color:#fcd34d; border-color:rgba(251,191,36,.4);  background:rgba(251,191,36,.09); }
-.sev-low  { color:#67e8f9; border-color:rgba(34,211,238,.4);  background:rgba(34,211,238,.09); }
-.theme-insight { margin:.65rem 0 .2rem; color:#cbd5e1; font-size:.93rem;
-  border-left:2px solid var(--ac,#22d3ee); padding-left:.75em; }
+.freq { margin-left:auto; color:var(--faint); font-size:12px;
+  font-variant-numeric:tabular-nums; }
+.sev-high { color:var(--red); border-color:rgba(255,69,58,.35); background:rgba(255,69,58,.12); }
+.sev-mid  { color:var(--orange); border-color:rgba(255,159,10,.35); background:rgba(255,159,10,.12); }
+.sev-low  { color:var(--blue); border-color:rgba(10,132,255,.35); background:rgba(10,132,255,.12); }
+.theme-insight { margin:.65rem 0 .2rem; color:#d1d1d6; font-size:.93rem;
+  border-left:2px solid var(--ac,var(--blue)); padding-left:.75em; }
 .quote { color:var(--sub); font-size:.84rem; margin-top:.3rem; padding-left:1em; }
 
 /* ---------- Star 增幅榜 ---------- */
 .section-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
-  margin:.15rem 0 .6rem; }
+  margin:.15rem 0 .7rem; }
 .section-title {
-  font-size:1.28rem; font-weight:900; letter-spacing:.03em;
-  background:linear-gradient(92deg,#fbbf24 0%,#f8fafc 55%,#67e8f9 100%);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
+  font-size:1.3rem; font-weight:700; letter-spacing:-.02em; color:var(--txt);
 }
-.section-sub { color:var(--sub); font-size:.78rem; letter-spacing:.06em; }
+.section-sub { color:var(--sub); font-size:.8rem; }
 .gain-card {
   position:relative; overflow:hidden; height:100%;
-  background:linear-gradient(180deg,var(--panel2) 0%,rgba(17,22,31,.5) 100%);
-  border:1px solid var(--line); border-radius:14px;
-  padding:12px 14px 11px 60px;
-  transition:transform .18s ease, border-color .18s ease;
+  padding:13px 15px 12px 60px;
+  transition:background .18s ease, transform .18s ease;
 }
-.gain-card:hover { transform:translateY(-2px); border-color:rgba(148,163,184,.32); }
-.gain-card::before {
-  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
-  background:var(--rc,#22d3ee); box-shadow:0 0 12px var(--rc,#22d3ee);
+.gain-card:hover {
+  background:var(--panel-strong); transform:translateY(-1px);
 }
 .gain-rank {
-  position:absolute; left:16px; top:50%; transform:translateY(-50%);
-  font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:700;
-  color:var(--rc,#22d3ee); text-shadow:0 0 14px var(--rc,#22d3ee);
+  position:absolute; left:17px; top:50%; transform:translateY(-50%);
+  font-size:20px; font-weight:700; color:var(--rc,var(--faint));
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em;
 }
 .gain-name {
-  font-size:1.02rem; font-weight:700; color:#f1f5f9;
-  text-decoration:none; word-break:break-all;
+  font-size:1.02rem; font-weight:600; color:var(--txt);
+  text-decoration:none; word-break:break-all; letter-spacing:-.01em;
 }
-.gain-name:hover { color:#67e8f9; }
+.gain-name:hover { color:var(--blue); }
 .gain-meta {
-  margin-top:4px; font-family:'JetBrains Mono',monospace;
-  font-size:12px; color:var(--sub);
+  margin-top:4px; font-size:12px; color:var(--sub);
+  font-variant-numeric:tabular-nums;
 }
-.gain-meta b { color:#34d399; font-weight:700; font-size:13px; }
+.gain-meta b { color:var(--green); font-weight:600; font-size:13px; }
 .gain-desc {
   margin-top:4px; color:var(--sub); font-size:.84rem;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 /* 榜单卡右侧 ➕ 图标按钮：按钮列很窄且带 help tooltip 包装层，
-   须压缩内边距并单独着色，否则图标被裁切、只剩默认深色底 */
+   须压缩内边距并单独着色，否则图标被裁切 */
 [data-testid="stHorizontalBlock"]:has(.gain-card) .stButton button {
-  min-width:0; padding:4px 5px; font-size:15px; line-height:1;
-  border:1px solid rgba(34,211,238,.35); border-radius:10px;
-  background:rgba(34,211,238,.08); color:#67e8f9; box-shadow:none;
+  min-width:0; padding:4px 6px; font-size:15px; line-height:1;
+  border:1px solid var(--line); border-radius:10px;
+  background:rgba(255,255,255,.07); color:var(--txt); box-shadow:none;
 }
 [data-testid="stHorizontalBlock"]:has(.gain-card) .stButton button:hover {
-  background:rgba(34,211,238,.18); border-color:rgba(34,211,238,.6);
-  box-shadow:0 0 12px rgba(34,211,238,.35);
+  background:rgba(255,255,255,.14); border-color:var(--line-strong);
 }
-/* 榜单标题右侧刷新按钮：与卡片 ➕ 同款的小方块 ghost 图标钮（收窄内边距、宽度贴内容），
-   借 st-key-* 包装类精准命中，覆盖全局渐变大按钮样式 */
+/* 榜单标题右侧刷新按钮：与卡片 ➕ 同款的小方块 ghost 图标钮，
+   借 st-key-* 包装类精准命中，覆盖全局主按钮样式 */
 .st-key-refresh_hot .stButton button {
-  width:auto; min-width:0; min-height:0; padding:4px 11px; font-size:17px; font-weight:700; line-height:1.2;
-  border:1px solid rgba(34,211,238,.35); border-radius:10px;
-  background:rgba(34,211,238,.08); color:#67e8f9; box-shadow:none;
+  width:auto; min-width:0; min-height:0; padding:4px 11px; font-size:17px;
+  font-weight:600; line-height:1.2;
+  border:1px solid var(--line); border-radius:10px;
+  background:rgba(255,255,255,.07); color:var(--txt); box-shadow:none;
 }
 .st-key-refresh_hot .stButton button:hover {
-  background:rgba(34,211,238,.18); border-color:rgba(34,211,238,.6);
-  box-shadow:0 0 12px rgba(34,211,238,.35);
+  background:rgba(255,255,255,.14); border-color:var(--line-strong);
 }
 
-/* ---------- Tab 胶囊化 ---------- */
-.stTabs [data-baseweb="tab-list"] { gap:6px; background:transparent; }
-.stTabs [data-baseweb="tab"] {
-  border:1px solid var(--line); border-radius:999px;
-  padding:6px 18px; background:rgba(17,22,31,.6);
-  font-weight:600; color:var(--sub);
+/* ---------- Tab：iOS 分段控件（Streamlit 1.62+ 新 DOM，stTab/stTabPanel） ---------- */
+[data-testid="stTabs"] div:has(> [data-testid="stTab"]) {
+  gap:4px; background:rgba(255,255,255,.05);
+  border:1px solid var(--line); border-radius:12px; padding:4px;
+  width:fit-content;
 }
-.stTabs [aria-selected="true"] {
-  color:#0a0e14 !important; background:linear-gradient(92deg,#67e8f9,#a78bfa);
-  border-color:transparent; box-shadow:0 0 18px rgba(103,232,249,.25);
+[data-testid="stTab"] {
+  border:none; border-radius:9px; padding:6px 18px;
+  background:transparent; color:var(--sub); font-weight:500;
 }
-.stTabs [data-baseweb="tab-highlight"],
-.stTabs [data-baseweb="tab-border"] { display:none; }
+[data-testid="stTab"] p { margin:0; }
+[data-testid="stTab"]:hover { color:var(--txt); }
+[data-testid="stTab"][aria-selected="true"] {
+  color:var(--txt) !important; background:rgba(255,255,255,.14);
+  box-shadow:0 1px 4px rgba(0,0,0,.35);
+}
+/* 关掉 React Aria 自带的选中下划线，选中态由玻璃亮块表达 */
+[data-testid="stTab"] .react-aria-SelectionIndicator { display:none; }
 
 /* ---------- 输入控件 ---------- */
 .stButton > button {
-  width:100%; border:none; border-radius:12px; font-weight:700;
-  background:linear-gradient(92deg,#0891b2,#7c3aed); color:#fff;
-  box-shadow:0 4px 22px rgba(124,58,237,.35);
+  width:100%; border:none; border-radius:980px; font-weight:600;
+  background:var(--blue); color:#fff;
+  box-shadow:0 4px 18px rgba(10,132,255,.25);
   transition:filter .15s ease;
 }
-.stButton > button:hover { filter:brightness(1.15); }
+.stButton > button:hover { filter:brightness(1.12); }
 .stDownloadButton > button {
-  width:100%; border:1px solid rgba(52,211,153,.45); border-radius:12px;
-  background:rgba(52,211,153,.08); color:#6ee7b7; font-weight:700;
+  width:100%; border:1px solid var(--line-strong); border-radius:980px;
+  background:rgba(255,255,255,.06); color:var(--txt); font-weight:600;
 }
-input, textarea { border-radius:10px !important; }
+.stDownloadButton > button:hover { background:rgba(255,255,255,.1); }
+input, textarea { border-radius:12px !important; }
 """
 
 
@@ -211,7 +218,7 @@ def inject() -> None:
 
 
 def hero(badge: str, title: str, sub: str) -> None:
-    """页面顶部渐变大标题。"""
+    """页面顶部大标题。"""
     def esc(s: object) -> str:
         return _html.escape(str(s))
     st.markdown(
@@ -225,10 +232,12 @@ def hero(badge: str, title: str, sub: str) -> None:
 
 
 def stat_cards(items: list[tuple[str, str, str]]) -> None:
-    """一行发光统计卡。items: [(标签, 数值, 强调色)]。"""
+    """一行磨砂玻璃统计卡。items: [(标签, 数值, 强调色)]。"""
     cells = "".join(
         f'<div class="stat-card" style="--ac:{color}">'
-        f'<div class="stat-num">{_html.escape(value)}</div>'
+        f'<div class="stat-num">'
+        f'{_html.escape(str(value)).replace("&lt;small&gt;", "<small>").replace("&lt;/small&gt;", "</small>")}'
+        f'</div>'
         f'<div class="stat-label">{_html.escape(label)}</div></div>'
         for label, value, color in items
     )
@@ -236,7 +245,7 @@ def stat_cards(items: list[tuple[str, str, str]]) -> None:
 
 
 def section_head(title: str, sub: str = "") -> None:
-    """区块标题：渐变大字 + 灰色说明。"""
+    """区块标题：大字标题 + 灰色说明。"""
     sub_html = f'<span class="section-sub">{_html.escape(sub)}</span>' if sub else ""
     st.markdown(
         '<div class="section-head">'
@@ -247,9 +256,9 @@ def section_head(title: str, sub: str = "") -> None:
 
 
 def gain_card(item: dict, rank: int) -> str:
-    """Star 增幅榜单卡 HTML。rank 1-3 有金银铜强调色，其余为青色。"""
+    """Star 增幅榜单卡 HTML。rank 1-3 用金/银/铜名次色，其余中性灰。"""
     esc = _html.escape
-    rank_color = {1: "#fbbf24", 2: "#e2e8f0", 3: "#fb923c"}.get(rank, "#22d3ee")
+    rank_color = {1: "#ffd60a", 2: "#b8b8bd", 3: "#ff9f0a"}.get(rank, "#48484a")
     desc = (item.get("description") or "").strip()
     return (
         f'<div class="gain-card" style="--rc:{rank_color}">'
