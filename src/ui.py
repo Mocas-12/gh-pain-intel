@@ -38,7 +38,7 @@ html, body, .stApp, [class*="css"] {
   color: var(--txt);
   -webkit-font-smoothing:antialiased;
 }
-.block-container { padding-top:1.7rem; max-width:1400px; }
+.block-container { padding-top:1.1rem; max-width:1400px; }
 #MainMenu, footer { visibility:hidden; }
 header[data-testid="stHeader"] { background:transparent; }
 hr { border-color:var(--line); }
@@ -69,15 +69,19 @@ section[data-testid="stSidebar"] {
 }
 section[data-testid="stSidebar"] * { color:var(--txt); }
 section[data-testid="stSidebar"] hr { margin:.4rem 0; border-color:var(--line); }
+/* 侧边栏纵向节奏收紧，保证配置一屏放下 */
+section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap:.4rem !important; }
+section[data-testid="stSidebar"] h2 { font-size:1.02rem; margin-bottom:0; }
+section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p { margin-bottom:0; }
 
 /* ---------- Hero 头部 ---------- */
-.hero { padding:.4rem 0 .2rem 0; }
+.hero { padding:.15rem 0 .1rem 0; }
 .hero-badge {
   display:inline-flex; align-items:center; gap:.5em;
   font-size:11px; font-weight:600; letter-spacing:.14em;
   color:var(--sub);
   border:1px solid var(--line); border-radius:999px;
-  padding:.34em 1em; margin-bottom:.75em;
+  padding:.34em 1em; margin-bottom:.6em;
   background:var(--panel);
 }
 .hero-dot { width:7px; height:7px; border-radius:50%; background:var(--green);
@@ -88,10 +92,10 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; border-color:var(--line); 
   .stat-card, .theme-card, .gain-card { transition:none; }
 }
 .hero h1 {
-  font-size:2.1rem; font-weight:700; line-height:1.18; margin:0 0 .35rem 0;
+  font-size:1.9rem; font-weight:700; line-height:1.18; margin:0 0 .3rem 0;
   color:var(--txt); letter-spacing:-.02em;
 }
-.hero-sub { color:var(--sub); font-size:.92rem; letter-spacing:0; }
+.hero-sub { color:var(--sub); font-size:.9rem; letter-spacing:0; }
 
 /* ---------- 统计卡 ---------- */
 .stat-grid { display:flex; gap:13px; flex-wrap:wrap; margin:.35rem 0 1rem 0; }
@@ -129,35 +133,35 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; border-color:var(--line); 
 .section-sub { color:var(--sub); font-size:.8rem; }
 .gain-card {
   position:relative; overflow:hidden; height:100%;
-  padding:13px 15px 12px 60px;
+  padding:10px 14px 9px 54px;
   transition:background .18s ease, transform .18s ease;
 }
 .gain-card:hover {
   background:var(--panel-strong); transform:translateY(-1px);
 }
 .gain-rank {
-  position:absolute; left:17px; top:50%; transform:translateY(-50%);
-  font-size:20px; font-weight:700; color:var(--rc,var(--faint));
+  position:absolute; left:16px; top:50%; transform:translateY(-50%);
+  font-size:19px; font-weight:700; color:var(--rc,var(--faint));
   font-variant-numeric:tabular-nums; letter-spacing:-.02em;
 }
 .gain-name {
-  font-size:1.02rem; font-weight:600; color:var(--txt);
+  font-size:1rem; font-weight:600; color:var(--txt);
   text-decoration:none; word-break:break-all; letter-spacing:-.01em;
 }
 .gain-name:hover { color:var(--blue); }
 .gain-meta {
-  margin-top:4px; font-size:12px; color:var(--sub);
+  margin-top:3px; font-size:12px; color:var(--sub);
   font-variant-numeric:tabular-nums;
 }
 .gain-meta b { color:var(--green); font-weight:600; font-size:13px; }
 .gain-desc {
-  margin-top:4px; color:var(--sub); font-size:.84rem;
+  margin-top:3px; color:var(--sub); font-size:.83rem;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 /* 榜单卡右侧 ➕ 图标按钮：按钮列很窄且带 help tooltip 包装层，
-   须压缩内边距并单独着色，否则图标被裁切 */
+   须压缩内边距并单独着色，否则图标被裁切；标签为纯文本 + 字形随主题 */
 [data-testid="stHorizontalBlock"]:has(.gain-card) .stButton button {
-  min-width:0; padding:4px 6px; font-size:15px; line-height:1;
+  min-width:0; padding:2px 7px; font-size:18px; font-weight:500; line-height:1.3;
   border:1px solid var(--line); border-radius:10px;
   background:rgba(255,255,255,.07); color:var(--txt); box-shadow:none;
 }
@@ -195,14 +199,15 @@ section[data-testid="stSidebar"] hr { margin:.4rem 0; border-color:var(--line); 
 /* 关掉 React Aria 自带的选中下划线，选中态由玻璃亮块表达 */
 [data-testid="stTab"] .react-aria-SelectionIndicator { display:none; }
 
-/* ---------- 输入控件 ---------- */
+/* ---------- 主按钮：苹果式单色白胶囊（黑字白底，深色页面上最高对比、最克制） ---------- */
 .stButton > button {
   width:100%; border:none; border-radius:980px; font-weight:600;
-  background:var(--blue); color:#fff;
-  box-shadow:0 4px 18px rgba(10,132,255,.25);
-  transition:filter .15s ease;
+  background:#f5f5f7; color:#0d0d0f;
+  box-shadow:0 4px 18px rgba(0,0,0,.35);
+  transition:filter .15s ease, transform .15s ease;
 }
-.stButton > button:hover { filter:brightness(1.12); }
+.stButton > button:hover { filter:brightness(.92); }
+/* ---------- 输入控件 ---------- */
 .stDownloadButton > button {
   width:100%; border:1px solid var(--line-strong); border-radius:980px;
   background:rgba(255,255,255,.06); color:var(--txt); font-weight:600;
@@ -218,12 +223,17 @@ def inject() -> None:
 
 
 def hero(badge: str, title: str, sub: str) -> None:
-    """页面顶部大标题。"""
+    """页面顶部大标题；badge 为空串时不渲染徽章行。"""
     def esc(s: object) -> str:
         return _html.escape(str(s))
+    badge_html = (
+        f'<div class="hero-badge"><span class="hero-dot"></span>{esc(badge)}</div>'
+        if badge
+        else ""
+    )
     st.markdown(
         '<div class="hero">'
-        f'<div class="hero-badge"><span class="hero-dot"></span>{esc(badge)}</div>'
+        f'{badge_html}'
         f'<h1>{esc(title)}</h1>'
         f'<div class="hero-sub">{esc(sub)}</div>'
         "</div>",

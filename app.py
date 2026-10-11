@@ -27,7 +27,7 @@ st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="
 inject()
 
 hero(
-    "LIVE INTEL · OX ALPHA",
+    "",
     "开源社区痛点情报中心",
     "GitHub Issue 监控 → 多模型深度语义分析 → 一键导出市场研究报告（只读 · 内部研究用途）",
 )
@@ -89,7 +89,7 @@ if hot_repos:
             info, add = cell.columns([9, 1], vertical_alignment="center")
             info.markdown(gain_card(r, rank), unsafe_allow_html=True)
             add.button(
-                "➕",
+                "+",  # 纯文本字形，随主题着色（➕ emoji 的彩色与玻璃主题冲突）
                 key=f"add_{r['repo']}",
                 on_click=_add_repo,
                 args=(r["repo"],),
@@ -119,12 +119,13 @@ with st.sidebar:
     repos_raw = st.text_area(
         "目标仓库（每行一个 owner/repo）",
         "ollama/ollama\nlangchain-ai/langchain",
-        height=110,
+        height=68,
         key="repos_box",
     )
 
-    days = st.slider("时间窗口（天）", 1, 30, 7)
-    max_per_repo = st.slider("每个仓库最大 Issue 数", 20, 500, 120, step=20)
+    win_col, max_col = st.columns(2)
+    days = win_col.slider("时间窗口（天）", 1, 30, 7)
+    max_per_repo = max_col.slider("最大 Issue 数", 20, 500, 120, step=20)
     include_comments = st.checkbox("抓取热门评论作为上下文", value=True)
     github_token = st.text_input(
         "GitHub Token（可选，提升 API 限额）",
@@ -202,7 +203,7 @@ with st.sidebar:
         max_workers = col_w.slider("并发请求数", 1, 8, 4)
         st.caption("⚡ 并发批处理可大幅提升分类速度；但并发过高会触发平台限流(429)，退避重试反而变慢")
 
-run_btn = st.button("🚀 开始抓取与分析", type="primary", use_container_width=True)
+run_btn = st.button("开始抓取与分析", type="primary", use_container_width=True)
 
 # ---------------- 会话状态 ----------------
 for key in ("result", "scrape_meta", "errors"):
@@ -446,7 +447,7 @@ if st.session_state.result:
         st.divider()
         st.markdown(md)
 else:
-    hero("STANDBY", "等待情报采集指令", "在侧边栏完成配置后，点击「开始抓取与分析」启动分析管线")
+    hero("", "等待情报采集指令", "在侧边栏完成配置后，点击「开始抓取与分析」启动分析管线")
     current_provider = PROVIDERS.get(
         st.session_state.get("llm_provider", DEFAULT_PROVIDER), {}
     ).get("short", "Ox Alpha")
