@@ -92,7 +92,7 @@ flowchart LR
 
 | 服务商 | 端点 | Key 环境变量 |
 | --- | --- | --- |
-| OpenRouter（默认 · Ox Alpha） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
+| OpenRouter（默认 · GLM-5.3 Flash） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` |
 | Google Gemini | `…/v1beta/openai`（官方兼容端点） | `GEMINI_API_KEY` |
 | Anthropic Claude | `https://api.anthropic.com/v1`（官方兼容层） | `ANTHROPIC_API_KEY` |

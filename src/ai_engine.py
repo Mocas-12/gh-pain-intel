@@ -6,7 +6,7 @@
 
 性能设计：分类阶段使用线程池并发请求多个批次（I/O 密集场景），
 传输层内置 429/5xx 指数退避；失败批次自动兜底，不中断整体管线。
-默认服务商为 OpenRouter（Ox Alpha），可通过传入 base_url/model 切换为
+默认服务商为 OpenRouter（GLM-5.3 Flash），可通过传入 base_url/model 切换为
 OpenAI、Gemini、DeepSeek 等任意兼容端点（预设见 src/llm_providers.py）。
 API Key 按优先级读取：调用方显式传入 → 环境变量 LLM_API_KEY → OPENROUTER_API_KEY。
 """
@@ -26,7 +26,7 @@ from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
 # 模块级会话：复用底层连接池（行为不变，仅避免每次请求重建连接）
 _SESSION = requests.Session()
 
-# 默认服务商：OpenRouter · Ox Alpha（可在调用时被 base_url/model 参数覆盖）。
+# 默认服务商：OpenRouter（默认模型取自注册表，可在调用时被 base_url/model 参数覆盖）。
 # 默认值统一从 src/llm_providers.py 注册表推导，避免多处硬编码产生漂移。
 _preset = PROVIDERS[DEFAULT_PROVIDER]
 DEFAULT_BASE_URL = _preset["base_url"]

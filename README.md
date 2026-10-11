@@ -96,7 +96,7 @@ fail due to free-tier throttling fall back automatically. To skip keys entirely,
 
 | Provider | Endpoint | Key environment variable |
 | --- | --- | --- |
-| OpenRouter (default · Ox Alpha) | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
+| OpenRouter (default · GLM-5.3 Flash) | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` |
 | Google Gemini | `…/v1beta/openai` (official compatible endpoint) | `GEMINI_API_KEY` |
 | Anthropic Claude | `https://api.anthropic.com/v1` (official compatibility layer) | `ANTHROPIC_API_KEY` |

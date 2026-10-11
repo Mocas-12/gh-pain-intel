@@ -157,6 +157,13 @@ with st.sidebar:
             help="分析层兼容 OpenAI Chat Completions 协议；切换服务商自动带出官方端点，也可手动修改",
         )
 
+        # 模型名单随平台轮换（如 ox-alpha 退役）：旧会话残留的失效值不会自愈，
+        # 清掉让 selectbox 落回新默认模型，避免用户一直对着死模型 404
+        if preset["models"] and st.session_state.get("llm_model") not in (
+            preset["models"] + ["✏️ 其他（手动输入）"]
+        ):
+            st.session_state.pop("llm_model", None)
+
         if preset["models"]:
             model_choice = st.selectbox(
                 "模型", preset["models"] + ["✏️ 其他（手动输入）"], key="llm_model"
