@@ -90,10 +90,6 @@ flowchart LR
 免费档限流较严（约 20 次/分、50 次/天，以官方文档为准），单次默认分析约 14 次请求够用；
 免费模型偶发限流导致的失败批次会自动兜底。完全不申请任何 Key 的替代：本地 Ollama（免 Key）。
 
-**访客零配置**：站主在 Streamlit Cloud 的 Secrets（本地为 `.env`）配置一次
-`OPENROUTER_API_KEY` 后，所有访客打开即用、界面上不出现任何 Key 输入；访客仍可在
-「使用自己的 Key」折叠里覆盖为自己的 Key。注意服务端 Key 的免费档限额由所有访客共享。
-
 | 服务商 | 端点 | Key 环境变量 |
 | --- | --- | --- |
 | OpenRouter（默认 · GLM-5.3 Flash） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
