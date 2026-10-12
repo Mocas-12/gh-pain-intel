@@ -79,10 +79,12 @@ section[data-testid="stSidebar"] {
 }
 section[data-testid="stSidebar"] * { color:var(--txt); }
 section[data-testid="stSidebar"] hr { margin:.4rem 0; border-color:var(--line); }
-/* 侧边栏纵向节奏收紧，保证配置一屏放下 */
+/* 侧边栏纵向节奏收紧，保证配置一屏放下（只压 label，caption 保留间距防重叠） */
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap:.4rem !important; }
 section[data-testid="stSidebar"] h2 { font-size:1.02rem; margin-bottom:0; }
-section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p { margin-bottom:0; }
+section[data-testid="stSidebar"] label { margin-bottom:0; }
+/* expander 与上方 caption 之间留出明确间隔，防止行高贴边重叠 */
+section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; }
 
 /* ---------- Hero 头部 ---------- */
 .hero { padding:.15rem 0 .1rem 0; }
@@ -237,6 +239,9 @@ section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p { mar
 @media (max-width: 640px) {
   .hero h1 { font-size:1.5rem; }
   .hero-sub { display:none; }  /* 副标题折行占地，手机端隐藏 */
+  /* 手机端增加呼吸感：页头与侧栏间距恢复常态（桌面紧凑化不适用于触屏小窗） */
+  .block-container { padding-top:1.3rem; }
+  section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap:.75rem !important; }
   /* ➕ 按钮列隐藏：窄屏列堆叠后它脱离卡片独占一条全宽灰杠，
      而「加仓库到分析目标」是桌面场景，手机上看榜不需要 */
   [data-testid="stHorizontalBlock"]:has(.gain-card)
