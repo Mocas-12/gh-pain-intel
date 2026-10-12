@@ -30,6 +30,7 @@ FAKE_HOT = [
         "description": f"demo repo {i}",
         "url": f"https://github.com/demo/repo-{i}",
         "days_on_board": i,  # 1=新上榜，>1=连续 N 天
+        "topics": ["ai-agents", "cli"] if i == 1 else [],
     }
     for i in range(1, 4)
 ]
@@ -83,6 +84,8 @@ class DashboardBootTest(unittest.TestCase):
             markdowns = "\n".join(m.value for m in at.markdown)
             self.assertIn("board-tag tag-new", markdowns)      # NEW 徽章
             self.assertIn("×2 天", markdowns)                   # 连续天数徽章
+            self.assertIn("topic-chip", markdowns)              # topics 标签行
+            self.assertIn("#ai-agents", markdowns)
 
 
 if __name__ == "__main__":

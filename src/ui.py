@@ -183,6 +183,12 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   display:inline-block; width:8px; height:8px; border-radius:50%;
   background:var(--lc,#8e8e93); margin-right:5px;
 }
+.topic-row { margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; }
+.topic-chip {
+  font-size:10.5px; color:var(--sub);
+  background:rgba(255,255,255,.06); border:1px solid var(--line);
+  border-radius:6px; padding:.14em .55em;
+}
 /* 榜单卡右侧 ➕ 图标按钮：按钮列很窄且带 help tooltip 包装层，
    须压缩内边距并单独着色，否则图标被裁切；标签为纯文本 + 字形随主题 */
 [data-testid="stHorizontalBlock"]:has(.gain-card) .stButton button {
@@ -320,6 +326,9 @@ def gain_card(item: dict, rank: int) -> str:
         tag = f'<span class="board-tag tag-streak">×{days} 天</span>'
     else:
         tag = ""
+    topics = [esc(t) for t in (item.get("topics") or [])[:4]]
+    chips = "".join(f'<span class="topic-chip">#{t}</span>' for t in topics)
+    topic_row = f'<div class="topic-row">{chips}</div>' if chips else ""
     if lang and lang != "-":
         dot = f'<span class="lang-dot" style="--lc:{LANG_COLORS.get(lang, "#8e8e93")}"></span>'
         lang_txt = esc(lang)
@@ -334,6 +343,7 @@ def gain_card(item: dict, rank: int) -> str:
         f' · 全站 {int(item.get("stars", 0)):,}'
         f' · {dot}{lang_txt}</div>'
         + (f'<div class="gain-desc">{esc(desc)}</div>' if desc else "")
+        + topic_row
         + "</div>"
     )
 

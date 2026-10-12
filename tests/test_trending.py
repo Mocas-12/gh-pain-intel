@@ -99,6 +99,12 @@ class ParseTrendingHtmlTest(unittest.TestCase):
         self.assertEqual(parse_trending_html("<html></html>"), [])
 
 
+def _seed_topics_cache(repo: str = "fake/repo") -> None:
+    """预置当日 topics 缓存，避免缓存命中路径的测试意外发起 topics 请求。"""
+    path = trending.CACHE_DIR / f"trending_topics_{trending.day_tag()}.json"
+    path.write_text(json.dumps({repo: []}), encoding="utf-8")
+
+
 class GetStarGainersCacheTest(unittest.TestCase):
     """磁盘缓存与 force 语义：False 读缓存、True 绕过重抓、失败保留旧缓存。
 
@@ -126,6 +132,7 @@ class GetStarGainersCacheTest(unittest.TestCase):
 
     def test_force_false_reads_disk_without_network(self):
         self._seed()
+        _seed_topics_cache()
 
         def _boom(*args, **kwargs):
             raise AssertionError("缓存命中时不应发起网络请求")
@@ -216,8 +223,40 @@ class BoardHistoryTest(unittest.TestCase):
     def test_cache_hit_path_also_enriches(self):
         self._seed_history(1, ["fake/repo"])
         self._seed_cache()  # 当日磁盘缓存已存在 → 走缓存命中路径
+        _seed_topics_cache()  # topics 当日缓存也预置，避免缓存命中路径发起请求
         data = trending.get_star_gainers()
         self.assertEqual(data[0]["days_on_board"], 2)
+
+
+class TopicsFetchTest(unittest.TestCase):
+    """Topics 标签：并发抓仓库页面 About 栏，当日缓存，失败留空。"""
+
+    def setUp(self):
+        self._orig_dir = trending.CACHE_DIR
+        self._tmp = tempfile.mkdtemp()
+        trending.CACHE_DIR = Path(self._tmp)
+
+    def tearDown(self):
+        trending.CACHE_DIR = self._orig_dir
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    def test_parse_and_daily_cache(self):
+        html_ok = mock.Mock(status_code=200, text='<a href="/topics/ai-agents">x</a>'
+                                                    '<a href="/topics/rust">y</a>'
+                                                    '<a href="/topics/ai-agents">dup</a>')
+        def handler(url: str, **kwargs):
+            if url.endswith("/a/1"):
+                return html_ok
+            return mock.Mock(status_code=404, text="")  # b/2 失败留空
+
+        with mock.patch.object(trending._SESSION, "get", side_effect=handler):
+            topics = trending._fetch_topics(["a/1", "b/2"], trending.day_tag())
+        self.assertEqual(topics["a/1"], ["ai-agents", "rust"])  # 去重保序
+        self.assertEqual(topics["b/2"], [])
+        # 再取一次：全部命中当日缓存，不再发请求
+        with mock.patch.object(trending._SESSION, "get", side_effect=AssertionError("应走缓存")):
+            topics2 = trending._fetch_topics(["a/1", "b/2"], trending.day_tag())
+        self.assertEqual(topics2["a/1"], ["ai-agents", "rust"])
 
 
 if __name__ == "__main__":

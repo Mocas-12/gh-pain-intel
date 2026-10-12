@@ -11,7 +11,9 @@ GitHub Search API 只能按“总星数”排序，拿不到“今天涨了多�
 同一天内重复打开应用直接读缓存，跨天自动重新抓取并清理旧文件。
 另有上榜历史快照（trending_history.json，滚动 15 天），用于给榜单标注
 「NEW（昨日未上榜）/ 连续 N 天上榜」，冷启动首日无基线不标记。
-页面抓取不消耗 GitHub API 配额，也无需 Token。
+Topics 标签（trending_topics_日期.json，当日缓存）从各仓库页面 About 栏
+并发抓取，让访客不点进 GitHub 也能知道项目是干嘛的；均为页面抓取，
+不消耗 GitHub API 配额，也无需 Token。
 """
 from __future__ import annotations
 
@@ -20,6 +22,7 @@ import json
 import os
 import re
 from datetime import datetime, timedelta, UTC
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import requests
@@ -153,11 +156,64 @@ def _days_on_board(history: dict[str, list[str]], repo: str, tag: str) -> int | 
     return days
 
 
+def _topics_path(tag: str) -> Path:
+    """当日 topics 缓存文件（repo → 标签列表）。"""
+    return CACHE_DIR / f"trending_topics_{tag}.json"
+
+
+def _load_topics(tag: str) -> dict[str, list[str]]:
+    try:
+        data = json.loads(_topics_path(tag).read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _fetch_topics(repos: list[str], tag: str) -> dict[str, list[str]]:
+    """并发抓取各仓库页面的 About 栏 topic 标签（页面抓取，不消耗 API 配额）。
+
+    当日缓存，缺失的仓库才发请求；单个仓库失败留空不影响榜单。
+    """
+    cached = _load_topics(tag)
+    todo = [r for r in repos if r not in cached]
+    if todo:
+        def one(repo: str) -> tuple[str, list[str]]:
+            try:
+                resp = _SESSION.get(
+                    f"https://github.com/{repo}", headers=BROWSER_HEADERS, timeout=10
+                )
+                if resp.status_code == 200:
+                    seen: set[str] = set()
+                    topics: list[str] = []
+                    for t in re.findall(r'href="/topics/([A-Za-z0-9\-]+)"', resp.text):
+                        if t not in seen:
+                            seen.add(t)
+                            topics.append(t)
+                    return repo, topics[:6]
+            except requests.RequestException:
+                pass  # 单仓失败留空
+            return repo, []
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            for repo, topics in pool.map(one, todo):
+                cached[repo] = topics
+        try:
+            _topics_path(tag).write_text(
+                json.dumps(cached, ensure_ascii=False), encoding="utf-8"
+            )
+        except OSError:
+            pass  # 缓存写入失败不影响本次返回
+    return cached
+
+
 def _finalize(data: list[dict], tag: str) -> list[dict]:
-    """给榜单附加连续上榜天数，并把当日名单登记进历史（读缓存与重抓共用）。"""
+    """给榜单附加连续上榜天数与 topics 标签，并登记当日名单进历史。"""
     history = _load_history()
     for r in data:
         r["days_on_board"] = _days_on_board(history, r["repo"], tag)
+    topics = _fetch_topics([r["repo"] for r in data], tag)
+    for r in data:
+        r["topics"] = topics.get(r["repo"], [])
     _record_history([r["repo"] for r in data], tag)
     return data
 
