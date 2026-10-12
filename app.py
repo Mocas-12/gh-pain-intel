@@ -17,7 +17,7 @@ import plotly.express as px
 import streamlit as st
 
 from src.ai_engine import PainIntelEngine
-from src.llm_providers import DEFAULT_PROVIDER, PROVIDERS
+from src.llm_providers import PROVIDERS
 from src.report import EMO_ZH, SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 from src.trending import get_star_gainers, last_updated
@@ -82,8 +82,18 @@ if st.session_state.get("hot_refresh_error"):
     st.session_state["hot_refresh_error"] = None
 
 if hot_repos:
-    for start in range(0, len(hot_repos), 2):  # 两列卡片栅格，按名次左右、自上而下排列
-        pair = hot_repos[start : start + 2]
+    # 语言过滤：从当日榜单动态生成选项，帮助「少看」而不是「多干活」
+    langs = sorted({r["language"] for r in hot_repos if r.get("language") and r["language"] != "-"})
+    lang_col, _ = st.columns([0.28, 0.72])
+    lang_filter = lang_col.selectbox(
+        "语言", ["全部"] + langs, key="lang_filter", label_visibility="collapsed"
+    )
+    shown = [r for r in hot_repos if lang_filter == "全部" or r.get("language") == lang_filter]
+
+    if not shown:
+        st.caption(f"今日榜单上没有 {lang_filter} 项目")
+    for start in range(0, len(shown), 2):  # 两列卡片栅格，按名次左右、自上而下排列
+        pair = shown[start : start + 2]
         cells = st.columns(2, gap="small")
         for cell, (rank, r) in zip(cells, enumerate(pair, start=start + 1), strict=False):
             info, add = cell.columns([9, 1], vertical_alignment="center")
@@ -205,7 +215,8 @@ with st.sidebar:
         max_workers = col_w.slider("并发请求数", 1, 8, 4)
         st.caption("⚡ 并发批处理可大幅提升分类速度；但并发过高会触发平台限流(429)，退避重试反而变慢")
 
-run_btn = st.button("开始抓取与分析", type="primary", use_container_width=True)
+    # 分析入口收进侧栏底部：首页留给榜单（核心场景是「看榜」，分析是次要功能）
+    run_btn = st.button("开始抓取与分析", type="primary", use_container_width=True)
 
 # ---------------- 会话状态 ----------------
 for key in ("result", "scrape_meta", "errors"):
@@ -449,14 +460,4 @@ if st.session_state.result:
         st.divider()
         st.markdown(md)
 else:
-    hero("", "等待情报采集指令", "在侧边栏完成配置后，点击「开始抓取与分析」启动分析管线")
-    current_provider = PROVIDERS.get(
-        st.session_state.get("llm_provider", DEFAULT_PROVIDER), {}
-    ).get("short", "Ox Alpha")
-    stat_cards(
-        [
-            ("系统状态", "待命", "#0a84ff"),
-            ("数据源", "GitHub API", "#bf5af2"),
-            ("分析引擎", current_provider, "#30d158"),
-        ]
-    )
+    st.caption("🛰 分析功能待命——在左侧完成配置后，点击侧栏「开始抓取与分析」启动")

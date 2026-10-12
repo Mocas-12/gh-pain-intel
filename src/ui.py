@@ -16,6 +16,16 @@ ACCENT = {"cyan": "#0a84ff", "red": "#ff453a", "amber": "#ff9f0a"}
 _SEV_CLASS = {"高": "sev-high", "中": "sev-mid", "低": "sev-low"}
 _CAT_ICON = {"bug": "🐞", "feature": "🚀", "question": "❓", "doc": "📚", "other": "🔎"}
 
+# GitHub linguist 语言主色（常见语言；未知语言回退中性灰）
+LANG_COLORS = {
+    "Python": "#3572A5", "JavaScript": "#f1e05a", "TypeScript": "#3178c6",
+    "Rust": "#dea584", "Go": "#00ADD8", "C": "#555555", "C++": "#f34b7d",
+    "C#": "#178600", "Java": "#b07219", "HTML": "#e34c26", "CSS": "#563d7c",
+    "Jupyter Notebook": "#DA5B0B", "Shell": "#89e051", "Ruby": "#701516",
+    "Vue": "#41b883", "Swift": "#F05138", "Kotlin": "#A97BFF", "PHP": "#4F5D95",
+    "Lua": "#000080", "Zig": "#ec915c", "Assembly": "#6E4C13",
+}
+
 _CSS = """
 <style>
 :root {
@@ -155,8 +165,21 @@ section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p { mar
 }
 .gain-meta b { color:var(--green); font-weight:600; font-size:13px; }
 .gain-desc {
-  margin-top:3px; color:var(--sub); font-size:.83rem;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  margin-top:3px; color:var(--sub); font-size:.83rem; line-height:1.45;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.board-tag {
+  display:inline-block; margin-left:8px; vertical-align:1px;
+  font-size:10px; font-weight:600; letter-spacing:.04em;
+  padding:.14em .6em; border-radius:999px;
+}
+.tag-new { color:var(--green); background:rgba(48,209,88,.12);
+  border:1px solid rgba(48,209,88,.35); }
+.tag-streak { color:var(--sub); background:rgba(255,255,255,.06);
+  border:1px solid var(--line); font-variant-numeric:tabular-nums; }
+.lang-dot {
+  display:inline-block; width:8px; height:8px; border-radius:50%;
+  background:var(--lc,#8e8e93); margin-right:5px;
 }
 /* 榜单卡右侧 ➕ 图标按钮：按钮列很窄且带 help tooltip 包装层，
    须压缩内边距并单独着色，否则图标被裁切；标签为纯文本 + 字形随主题 */
@@ -269,18 +292,32 @@ def section_head(title: str, sub: str = "") -> None:
 
 
 def gain_card(item: dict, rank: int) -> str:
-    """Star 增幅榜单卡 HTML。rank 1-3 用金/银/铜名次色，其余中性灰。"""
+    """Star 增幅榜单卡 HTML。rank 1-3 用金/银/铜名次色，其余中性灰；
+    days_on_board=1 标 NEW，>1 标连续天数，None（冷启动）不标。"""
     esc = _html.escape
     rank_color = {1: "#ffd60a", 2: "#b8b8bd", 3: "#ff9f0a"}.get(rank, "#48484a")
     desc = (item.get("description") or "").strip()
+    lang = (item.get("language") or "").strip()
+    days = item.get("days_on_board")
+    if days == 1:
+        tag = '<span class="board-tag tag-new">NEW</span>'
+    elif isinstance(days, int) and days > 1:
+        tag = f'<span class="board-tag tag-streak">×{days} 天</span>'
+    else:
+        tag = ""
+    if lang and lang != "-":
+        dot = f'<span class="lang-dot" style="--lc:{LANG_COLORS.get(lang, "#8e8e93")}"></span>'
+        lang_txt = esc(lang)
+    else:
+        dot, lang_txt = "", "-"
     return (
         f'<div class="gain-card" style="--rc:{rank_color}">'
         f'<div class="gain-rank">{rank:02d}</div>'
         f'<a class="gain-name" href="{esc(item.get("url", "#"))}" target="_blank">'
-        f'{esc(item.get("repo", "?"))}</a>'
+        f'{esc(item.get("repo", "?"))}</a>{tag}'
         f'<div class="gain-meta"><b>+{int(item.get("gained", 0)):,}</b> ⭐ 今日'
         f' · 全站 {int(item.get("stars", 0)):,}'
-        f' · {esc(item.get("language") or "-")}</div>'
+        f' · {dot}{lang_txt}</div>'
         + (f'<div class="gain-desc">{esc(desc)}</div>' if desc else "")
         + "</div>"
     )

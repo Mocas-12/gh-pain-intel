@@ -73,13 +73,16 @@ flowchart LR
 The "🔥 Today's STAR Growth TOP 10" card grid at the top of the homepage (expanded by default) shows the
 **stars gained in the last day** (`stars today`) from GitHub's official Trending, sorted in descending order by
 growth — not an all-time star ranking. The board refreshes every day, making it perfect for spotting repos that
-are taking off right now. Click the ↻ Refresh button next to the title to force a re-fetch bypassing the cache, and click ➕
-on a card to add the repo to your analysis targets with one click.
+are taking off right now. **NEW** after a repo name means it was not on the board yesterday, and **×N days**
+marks N consecutive days on the board (shown from day 2 on); the board can be filtered by language. Click the ↻
+Refresh button next to the title to force a re-fetch bypassing the cache, and click + on a card to add the repo
+to your analysis targets with one click.
 
 | Feature | Details |
 | --- | --- |
 | Data source | https://github.com/trending?since=daily (scraped from the page; consumes no GitHub API quota, no token needed) |
 | Refresh cadence | Cached by UTC date; fetched once on the first app open each day — the "↻" Refresh button next to the title forces a re-fetch anytime |
+| Board dynamics | Compared against server-side history snapshots (rolling 15 days): NEW = absent yesterday, ×N = consecutive days on board; no marks on day one (no baseline yet) |
 | Fallback | If the page structure changes, shows "board temporarily unavailable" without affecting other features |
 
 ## 🔀 Multi-LLM Switching

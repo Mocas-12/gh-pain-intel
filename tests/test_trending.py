@@ -7,7 +7,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from datetime import datetime, UTC
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from unittest import mock
 
@@ -150,6 +150,74 @@ class GetStarGainersCacheTest(unittest.TestCase):
             with self.assertRaises(OSError):
                 trending.get_star_gainers(force=True)
         self.assertTrue(cache.exists())  # 失败不破坏旧缓存，看板可继续展示上次数据
+
+
+class BoardHistoryTest(unittest.TestCase):
+    """上榜动态标记：NEW（昨日未上榜）/ 连续 N 天；冷启动不标记。
+
+    服务端历史快照（trending_history.json）替代浏览器 localStorage 的
+    「我看过了」记忆——多设备一致且零前端依赖，语义见 src/trending.py。
+    """
+
+    def setUp(self):
+        self._orig_dir = trending.CACHE_DIR
+        self._tmp = tempfile.mkdtemp()
+        trending.CACHE_DIR = Path(self._tmp)
+
+    def tearDown(self):
+        trending.CACHE_DIR = self._orig_dir
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    def _seed_history(self, days_ago: int, repos: list[str]):
+        tag = (datetime.now(UTC) - timedelta(days=days_ago)).strftime("%Y-%m-%d")
+        hist = trending._load_history()
+        hist[tag] = repos
+        trending._history_path().write_text(json.dumps(hist), encoding="utf-8")
+
+    def _seed_cache(self):
+        cache = trending.CACHE_DIR / f"trending_daily_{trending.day_tag()}.json"
+        cache.write_text(
+            json.dumps([{"repo": "fake/repo", "stars": 1, "gained": 1,
+                         "language": "Py", "description": "", "url": "#"}]),
+            encoding="utf-8",
+        )
+
+    def _fetch_fake(self, repos: list[str]):
+        page = "<html>" + "".join(article(r, 100, 10) for r in repos) + "</html>"
+        resp = mock.Mock(status_code=200, text=page)
+        with mock.patch.object(trending._SESSION, "get", return_value=resp):
+            return trending.get_star_gainers(force=True)
+
+    def test_cold_start_no_baseline_no_marks_but_history_recorded(self):
+        data = self._fetch_fake(["a/1", "b/2"])
+        self.assertEqual([r["days_on_board"] for r in data], [None, None])  # 无基线不标记
+        hist = trending._load_history()
+        self.assertIn(trending.day_tag(), hist)  # 当日名单已登记，明天起有基线
+
+    def test_new_and_streak_marks(self):
+        self._seed_history(1, ["a/1"])  # 昨日只有 a/1
+        data = self._fetch_fake(["a/1", "b/2"])
+        by_repo = {r["repo"]: r["days_on_board"] for r in data}
+        self.assertEqual(by_repo["a/1"], 2)  # 连续两天
+        self.assertEqual(by_repo["b/2"], 1)  # 新上榜
+
+    def test_single_day_gap_does_not_break_streak(self):
+        self._seed_history(2, ["a/1"])  # 前天在榜
+        # 昨日应用没被打开 → 昨日快照键完全缺失（不是空名单），空洞应被容忍
+        data = self._fetch_fake(["a/1"])
+        self.assertEqual(data[0]["days_on_board"], 2)  # 今天 + 前天 = 连续 2 天
+
+    def test_gap_breaks_when_repo_actually_absent(self):
+        self._seed_history(3, ["a/1"])
+        self._seed_history(1, [])  # 昨日榜单正常抓取但 a/1 不在 → 真断榜
+        data = self._fetch_fake(["a/1"])
+        self.assertEqual(data[0]["days_on_board"], 1)  # 重新计为 NEW
+
+    def test_cache_hit_path_also_enriches(self):
+        self._seed_history(1, ["fake/repo"])
+        self._seed_cache()  # 当日磁盘缓存已存在 → 走缓存命中路径
+        data = trending.get_star_gainers()
+        self.assertEqual(data[0]["days_on_board"], 2)
 
 
 if __name__ == "__main__":

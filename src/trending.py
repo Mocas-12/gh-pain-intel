@@ -9,6 +9,8 @@ GitHub Search API 只能按“总星数”排序，拿不到“今天涨了多�
 
 缓存策略：按 UTC 日期落盘（.cache/trending_daily_YYYY-MM-DD.json），
 同一天内重复打开应用直接读缓存，跨天自动重新抓取并清理旧文件。
+另有上榜历史快照（trending_history.json，滚动 15 天），用于给榜单标注
+「NEW（昨日未上榜）/ 连续 N 天上榜」，冷启动首日无基线不标记。
 页面抓取不消耗 GitHub API 配额，也无需 Token。
 """
 from __future__ import annotations
@@ -17,7 +19,7 @@ import html as html_lib
 import json
 import os
 import re
-from datetime import datetime, UTC
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 
 import requests
@@ -91,10 +93,80 @@ def parse_trending_html(page_html: str) -> list[dict]:
     return out[:TOP_N]
 
 
+def _history_path() -> Path:
+    """上榜历史快照文件（按天滚动，记录每天的 repo 名单）。"""
+    return CACHE_DIR / "trending_history.json"
+
+
+def _load_history() -> dict[str, list[str]]:
+    try:
+        data = json.loads(_history_path().read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _record_history(repos: list[str], tag: str) -> None:
+    """把当日榜单 repo 名单写入历史（幂等 upsert），保留最近 15 天。"""
+    history = _load_history()
+    history[tag] = sorted(set(repos))
+    trimmed = {k: history[k] for k in sorted(history)[-15:]}
+    try:
+        _history_path().write_text(
+            json.dumps(trimmed, ensure_ascii=False), encoding="utf-8"
+        )
+    except OSError:
+        pass  # 历史写入失败不影响榜单返回
+
+
+def _days_on_board(history: dict[str, list[str]], repo: str, tag: str) -> int | None:
+    """repo 的连续上榜天数（含今天）；无早于今天的历史时返回 None（冷启动不标记）。
+
+    容忍一天空洞：某日应用没被打开导致的缺档不断开连续计数。
+    """
+    try:
+        today = datetime.strptime(tag, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    valid = {}
+    for key in history:
+        try:
+            valid[datetime.strptime(key, "%Y-%m-%d").date()] = set(history[key])
+        except ValueError:
+            continue
+    earlier = [d for d in valid if d < today]
+    if not earlier:
+        return None
+    days, gap_used = 1, False
+    d = today - timedelta(days=1)
+    while d >= min(earlier):
+        if d in valid:
+            if repo in valid[d]:
+                days += 1
+            else:
+                break
+        elif not gap_used:
+            gap_used = True  # 单日缺档，跳过继续看更早
+        else:
+            break
+        d -= timedelta(days=1)
+    return days
+
+
+def _finalize(data: list[dict], tag: str) -> list[dict]:
+    """给榜单附加连续上榜天数，并把当日名单登记进历史（读缓存与重抓共用）。"""
+    history = _load_history()
+    for r in data:
+        r["days_on_board"] = _days_on_board(history, r["repo"], tag)
+    _record_history([r["repo"] for r in data], tag)
+    return data
+
+
 def get_star_gainers(force: bool = False) -> list[dict]:
     """获取今日 Star 增幅 Top 10：优先读当日缓存，否则抓取 Trending 页并落盘。
 
     force=True 时跳过当日缓存直接重新抓取（成功后覆盖缓存文件，失败则保留旧缓存）。
+    返回的每条数据带 days_on_board 字段（连续上榜天数，None=无历史基线）。
     Raises RuntimeError 当请求失败或页面解析为空时（由调用方决定如何降级展示）。
     """
     timeout = 20
@@ -106,7 +178,7 @@ def get_star_gainers(force: bool = False) -> list[dict]:
         try:
             data = json.loads(cache_file.read_text(encoding="utf-8"))
             if isinstance(data, list):
-                return data
+                return _finalize(data, tag)
         except (OSError, json.JSONDecodeError):
             pass  # 缓存损坏则重新抓取
 
@@ -132,7 +204,7 @@ def get_star_gainers(force: bool = False) -> list[dict]:
                     pass
     except OSError:
         pass  # 缓存写入失败不影响本次结果返回
-    return data
+    return _finalize(data, tag)
 
 
 def last_updated() -> datetime | None:
