@@ -233,6 +233,16 @@ section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p { mar
   transition:background .15s ease;
 }
 .stButton > button:hover { background:rgba(255,255,255,.2); }
+/* ---------- 手机端适配（≤640px，Streamlit 列堆叠断点） ---------- */
+@media (max-width: 640px) {
+  .hero h1 { font-size:1.5rem; }
+  .hero-sub { display:none; }  /* 副标题折行占地，手机端隐藏 */
+  /* ➕ 按钮列隐藏：窄屏列堆叠后它脱离卡片独占一条全宽灰杠，
+     而「加仓库到分析目标」是桌面场景，手机上看榜不需要 */
+  [data-testid="stHorizontalBlock"]:has(.gain-card)
+    > [data-testid="stColumn"]:not(:has(.gain-card)) { display:none; }
+}
+
 /* ---------- 输入控件 ---------- */
 .stDownloadButton > button {
   width:100%; border:1px solid var(--line-strong); border-radius:980px;

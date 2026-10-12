@@ -82,18 +82,8 @@ if st.session_state.get("hot_refresh_error"):
     st.session_state["hot_refresh_error"] = None
 
 if hot_repos:
-    # 语言过滤：从当日榜单动态生成选项，帮助「少看」而不是「多干活」
-    langs = sorted({r["language"] for r in hot_repos if r.get("language") and r["language"] != "-"})
-    lang_col, _ = st.columns([0.28, 0.72])
-    lang_filter = lang_col.selectbox(
-        "语言", ["全部"] + langs, key="lang_filter", label_visibility="collapsed"
-    )
-    shown = [r for r in hot_repos if lang_filter == "全部" or r.get("language") == lang_filter]
-
-    if not shown:
-        st.caption(f"今日榜单上没有 {lang_filter} 项目")
-    for start in range(0, len(shown), 2):  # 两列卡片栅格，按名次左右、自上而下排列
-        pair = shown[start : start + 2]
+    for start in range(0, len(hot_repos), 2):  # 两列卡片栅格，按名次左右、自上而下排列
+        pair = hot_repos[start : start + 2]
         cells = st.columns(2, gap="small")
         for cell, (rank, r) in zip(cells, enumerate(pair, start=start + 1), strict=False):
             info, add = cell.columns([9, 1], vertical_alignment="center")

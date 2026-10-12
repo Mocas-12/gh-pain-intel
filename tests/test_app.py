@@ -75,7 +75,7 @@ class DashboardBootTest(unittest.TestCase):
         )
         self.assertTrue(any("榜单已刷新" in t.value for t in at.toast))
 
-    def test_board_tags_and_language_filter(self):
+    def test_board_tags_render(self):
         patch_data, patch_ts = patched_trending()
         with patch_data, patch_ts:
             at = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
@@ -83,12 +83,6 @@ class DashboardBootTest(unittest.TestCase):
             markdowns = "\n".join(m.value for m in at.markdown)
             self.assertIn("board-tag tag-new", markdowns)      # NEW 徽章
             self.assertIn("×2 天", markdowns)                   # 连续天数徽章
-            # 语言过滤：只看 Rust → Python 的卡片被隐藏
-            at.selectbox(key="lang_filter").set_value("Rust").run()
-            self.assertEqual(at.exception, [])
-            filtered = "\n".join(m.value for m in at.markdown)
-            self.assertIn("demo/repo-2", filtered)              # Rust 卡保留
-            self.assertNotIn("demo/repo-1", filtered)           # Python 卡隐藏
 
 
 if __name__ == "__main__":
