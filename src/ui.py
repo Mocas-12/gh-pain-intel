@@ -129,7 +129,16 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .signal-item i { display:block; width:100%; max-width:22px; min-height:3px;
   border-radius:3px 3px 1px 1px;
   background:rgba(48,209,88,.72); }
+.signal-item:first-child i { background:rgba(255,159,10,.9); }
 .signal-item small { color:var(--faint); font-size:.62rem; line-height:1; }
+.signal-feature { display:flex; align-items:flex-start; gap:9px; margin-top:10px; }
+.signal-rank { color:var(--orange); font-size:.7rem; font-weight:700; padding-top:2px; }
+.signal-feature-copy { min-width:0; }
+.signal-repo { color:var(--txt); font-size:.84rem; font-weight:600; text-decoration:none;
+  overflow-wrap:anywhere; }
+.signal-repo:hover { color:var(--blue); }
+.signal-description { color:var(--sub); font-size:.7rem; line-height:1.4; margin-top:2px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .signal-foot { display:flex; justify-content:space-between; gap:8px; color:var(--faint); font-size:.72rem; margin-top:7px; }
 .focus-card { display:grid; grid-template-columns:170px minmax(0,1fr); gap:18px;
   align-items:start; padding:14px 18px; margin:0 0 .7rem;
@@ -336,7 +345,18 @@ def intel_hero(items: list[dict], updated_at: object = None) -> None:
         f'<small>{rank}</small></span>'
         for rank, value in enumerate(values, start=1)
     )
-    top_repo = esc(items[0].get("repo", "等待榜单更新")) if items else "暂无数据"
+    top_repo = esc(items[0].get("repo", "暂无榜首数据")) if items else "暂无榜首数据"
+    top_url = str(items[0].get("url", "")) if items else ""
+    top_description = esc(items[0].get("description", "")) if items else ""
+    repo_html = (
+        f'<a class="signal-repo" href="{esc(top_url)}" target="_blank" rel="noopener noreferrer">'
+        f'{top_repo} ↗</a>'
+        if top_url.startswith("https://github.com/")
+        else f'<span class="signal-repo">{top_repo}</span>'
+    )
+    description_html = (
+        f'<div class="signal-description">{top_description}</div>' if top_description else ""
+    )
     peak_text = f"+{peak:,}" if values else "—"
     update_text = f"更新于 {updated_at:%H:%M}" if updated_at else "GitHub Trending 每日更新"
     st.markdown(
@@ -345,11 +365,16 @@ def intel_hero(items: list[dict], updated_at: object = None) -> None:
         '<div class="hero"><h1>开源社区痛点情报中心</h1>'
         '<div class="hero-sub">从 GitHub Issue 与项目热度中，发现正在升温的需求和问题。</div></div>'
         '</div><div class="signal-panel"><div class="signal-top">'
-        '<span class="signal-label">今日 Star 增幅最高</span>'
+        '<span class="signal-label">今日 Star 增幅榜首</span>'
         f'<span><b class="signal-value">{peak_text}</b><span class="signal-unit">stars</span></span>'
         f'</div><div class="signal-scale"><span>增幅</span><span>最高 {peak_text}</span></div>'
         f'<div class="signal-bars" aria-label="柱体按榜单排名排列，悬停查看 Star 增幅">{bars}</div>'
-        f'<div class="signal-foot"><span>{top_repo}</span><span>{esc(update_text)}</span></div>'
+        f'<div class="signal-feature"><span class="signal-rank">#1</span>'
+        f'<div class="signal-feature-copy">{repo_html}'
+        f'{description_html}'
+        '</div></div>'
+        f'<div class="signal-foot"><span>Top {len(values)} · 按日增 Star 排序</span>'
+        f'<span>{esc(update_text)}</span></div>'
         '</div></section>',
         unsafe_allow_html=True,
     )
