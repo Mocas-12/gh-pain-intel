@@ -21,10 +21,21 @@ from src.llm_providers import PROVIDERS
 from src.report import EMO_ZH, SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 from src.trending import get_star_gainers, last_updated
-from src.ui import gain_card, inject, intel_hero, section_head, stat_cards, theme_card
+from src.ui import (
+    gain_card,
+    home_focus,
+    inject,
+    intel_hero,
+    section_head,
+    stat_cards,
+    theme_card,
+)
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
 inject()
+for key in ("result", "scrape_meta", "errors"):
+    st.session_state.setdefault(key, None)
+
 
 def _add_repo(repo: str) -> None:
     """把仓库追加到侧边栏目标列表（去重）。"""
@@ -48,7 +59,19 @@ except Exception as exc:
 
 ts = last_updated()
 intel_hero(hot_repos, ts)
+home_focus(st.session_state.result)
 
+action_col, action_copy = st.columns([1.15, 5], vertical_alignment="center")
+with action_col:
+    run_btn = st.button(
+        "开始分析 Issue", type="primary", use_container_width=True, key="start_analysis"
+    )
+with action_copy:
+    st.markdown(
+        '<div class="home-action-copy">抓取近期 Issue，生成高频痛点、功能诉求与趋势报告。'
+        '仓库和模型参数在左侧配置。</div>',
+        unsafe_allow_html=True,
+    )
 head_col, refresh_col = st.columns([0.95, 0.05], vertical_alignment="center")
 with head_col:
     sub = "GitHub 官方 Trending · 最近一天新增星标 · 每日更新"
@@ -200,13 +223,7 @@ with st.sidebar:
         max_workers = col_w.slider("并发请求数", 1, 8, 4)
         st.caption("⚡ 并发批处理可大幅提升分类速度；但并发过高会触发平台限流(429)，退避重试反而变慢")
 
-    # 分析入口收进侧栏底部：首页留给榜单（核心场景是「看榜」，分析是次要功能）
-    run_btn = st.button("开始抓取与分析", type="primary", use_container_width=True)
-
-# ---------------- 会话状态 ----------------
-for key in ("result", "scrape_meta", "errors"):
-    st.session_state.setdefault(key, None)
-
+# ---------------- 开始抓取与分析 ----------------
 if run_btn:
     repos = [r.strip() for r in repos_raw.splitlines() if "/" in r.strip()]
     if not repos:
@@ -444,5 +461,3 @@ if st.session_state.result:
         )
         st.divider()
         st.markdown(md)
-else:
-    st.caption("🛰 分析功能待命——在左侧完成配置后，点击侧栏「开始抓取与分析」启动")

@@ -121,10 +121,25 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .signal-label { font-size:.78rem; color:var(--sub); }
 .signal-value { font-size:1.55rem; font-weight:650; font-variant-numeric:tabular-nums; }
 .signal-unit { color:var(--sub); font-size:.78rem; margin-left:5px; }
-.signal-bars { height:44px; display:flex; align-items:end; gap:5px; margin:10px 0 8px; }
-.signal-bars i { display:block; flex:1; min-width:4px; border-radius:3px 3px 1px 1px;
+.signal-scale { display:flex; justify-content:space-between; color:var(--faint); font-size:.68rem; margin-top:8px; }
+.signal-bars { height:52px; display:flex; align-items:end; gap:5px; margin:2px 0 0;
+  border-bottom:1px solid var(--line-strong); }
+.signal-item { flex:1; min-width:4px; height:100%; display:flex; flex-direction:column;
+  justify-content:end; align-items:center; gap:3px; }
+.signal-item i { display:block; width:100%; max-width:22px; min-height:3px;
+  border-radius:3px 3px 1px 1px;
   background:rgba(48,209,88,.72); }
-.signal-foot { display:flex; justify-content:space-between; gap:8px; color:var(--faint); font-size:.72rem; }
+.signal-item small { color:var(--faint); font-size:.62rem; line-height:1; }
+.signal-foot { display:flex; justify-content:space-between; gap:8px; color:var(--faint); font-size:.72rem; margin-top:7px; }
+.focus-card { display:grid; grid-template-columns:170px minmax(0,1fr); gap:18px;
+  align-items:start; padding:14px 18px; margin:0 0 .7rem;
+  border-left:2px solid var(--orange); background:rgba(255,159,10,.055); }
+.focus-label { color:var(--orange); font-size:.78rem; font-weight:600; }
+.focus-main { color:var(--txt); font-size:.96rem; font-weight:600; }
+.focus-detail { color:var(--sub); font-size:.82rem; line-height:1.55; margin-top:3px; }
+.focus-empty { border-left-color:var(--blue); background:rgba(10,132,255,.045); }
+.focus-empty .focus-label { color:var(--blue); }
+.home-action-copy { color:var(--sub); font-size:.84rem; line-height:1.5; }
 
 /* ---------- 统计卡 ---------- */
 .stat-grid { display:flex; gap:13px; flex-wrap:wrap; margin:.35rem 0 1rem 0; }
@@ -263,6 +278,7 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   .intel-hero { grid-template-columns:1fr; gap:12px; padding:18px; }
   .intel-copy .hero h1 { font-size:1.5rem; }
   .signal-panel { border-left:0; border-top:1px solid var(--line); padding:12px 0 0; }
+  .focus-card { grid-template-columns:1fr; gap:4px; }
   .hero h1 { font-size:1.5rem; }
   .hero-sub { display:none; }  /* 副标题折行占地，手机端隐藏 */
   /* 手机端增加呼吸感：页头与侧栏间距恢复常态（桌面紧凑化不适用于触屏小窗） */
@@ -314,8 +330,11 @@ def intel_hero(items: list[dict], updated_at: object = None) -> None:
     values = [max(0, int(item.get("gained", 0))) for item in items[:8]]
     peak = max(values, default=0)
     bars = "".join(
-        f'<i style="height:{max(8, round(value / peak * 100)) if peak else 8}%"></i>'
-        for value in values
+        f'<span class="signal-item"><i title="榜单第{rank}：+{value:,} stars" '
+        f'aria-label="榜单第{rank}：+{value:,} stars" '
+        f'style="height:{max(6, round(value / peak * 78)) if peak else 6}%"></i>'
+        f'<small>{rank}</small></span>'
+        for rank, value in enumerate(values, start=1)
     )
     top_repo = esc(items[0].get("repo", "等待榜单更新")) if items else "暂无数据"
     peak_text = f"+{peak:,}" if values else "—"
@@ -328,11 +347,50 @@ def intel_hero(items: list[dict], updated_at: object = None) -> None:
         '</div><div class="signal-panel"><div class="signal-top">'
         '<span class="signal-label">今日 Star 增幅最高</span>'
         f'<span><b class="signal-value">{peak_text}</b><span class="signal-unit">stars</span></span>'
-        f'</div><div class="signal-bars" aria-label="榜单前列 Star 增幅：{peak_text}">{bars}</div>'
+        f'</div><div class="signal-scale"><span>增幅</span><span>最高 {peak_text}</span></div>'
+        f'<div class="signal-bars" aria-label="柱体按榜单排名排列，悬停查看 Star 增幅">{bars}</div>'
         f'<div class="signal-foot"><span>{top_repo}</span><span>{esc(update_text)}</span></div>'
         '</div></section>',
         unsafe_allow_html=True,
     )
+
+
+def home_focus(result: dict | None) -> None:
+    """显示最新分析中优先级最高的缺陷主题，或首次分析指引。"""
+    esc = _html.escape
+    bugs = [t for t in (result or {}).get("themes", []) if t.get("category") == "bug"]
+    if bugs:
+        theme = min(
+            bugs,
+            key=lambda t: (
+                _SEVERITY_ORDER.get(str(t.get("severity", "中")), 1),
+                -int(t.get("frequency", 0)),
+            ),
+        )
+        severity = esc(theme.get("severity", "中"))
+        label = f"优先关注 · {severity}风险 · {int(theme.get('frequency', 0))} 条 Issue"
+        name = esc(theme.get("name", "未命名主题"))
+        detail = esc(theme.get("insight", ""))
+        css = "focus-card"
+    elif result:
+        label, name = "本次分析", "暂未识别出缺陷类主题"
+        detail = "可以查看功能诉求、趋势与情绪板块，了解这批 Issue 的其他信号。"
+        css = "focus-card focus-empty"
+    else:
+        label, name = "等待首次分析", "这里会显示最值得优先关注的社区痛点。"
+        detail = "先在左侧配置目标仓库和模型，再点击下方「开始分析 Issue」。"
+        css = "focus-card focus-empty"
+    st.markdown(
+        f'<div class="{css}"><div class="focus-label">{esc(label)}</div>'
+        f'<div><div class="focus-main">{name}</div>'
+        f'<div class="focus-detail">{detail}</div></div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+_SEVERITY_ORDER = {"高": 0, "中": 1, "低": 2}
+
+
 def stat_cards(items: list[tuple[str, str, str]]) -> None:
     """一行磨砂玻璃统计卡。items: [(标签, 数值, 强调色)]。"""
     cells = "".join(
