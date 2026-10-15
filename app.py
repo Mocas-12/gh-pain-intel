@@ -143,7 +143,7 @@ with st.sidebar:
 
     win_col, max_col = st.columns(2)
     days = win_col.slider("时间窗口（天）", 1, 30, 7)
-    max_per_repo = max_col.slider("最大 Issue 数", 20, 500, 120, step=20)
+    max_per_repo = max_col.slider("最大 Issue 数", 20, 500, 40, step=20)
     include_comments = st.checkbox("抓取热门评论作为上下文", value=True)
     github_token = st.text_input(
         "GitHub Token（可选，提升 API 限额）",
@@ -178,14 +178,29 @@ with st.sidebar:
             type="password",
             value=_get_secret(preset["key_env"]),
             placeholder=preset["key_hint"] or "选填",
-            help=f"云端可在 Secrets 配置 {preset['key_env']}，选中该服务商后自动带入",
+            help=f"自部署时可将 {preset['key_env']} 配置在 .env 或 Streamlit Secrets 中，下次自动带入",
         )
         if not api_key:
             st.caption("⚠️ 尚未填写，开始分析前请先填入")
-        if preset["key_url"]:
-            st.caption(f"[获取 {preset['short']} Key ↗]({preset['key_url']})")
-        else:
-            st.caption("可选，仅当你的端点需要鉴权时填写")
+            if preset["key_url"]:
+                if provider_id == "openrouter":
+                    st.link_button(
+                        "① 免费创建 OpenRouter Key ↗",
+                        preset["key_url"],
+                        use_container_width=True,
+                    )
+                    st.caption(
+                        "② 创建后粘贴到上方。共享在线版不会保存访客的 Key；"
+                        "自部署时放入根目录 .env，以后打开自动带入。"
+                    )
+                else:
+                    st.caption(f"[获取 {preset['short']} Key ↗]({preset['key_url']})")
+            else:
+                st.caption("可选，仅当你的端点需要鉴权时填写")
+        elif provider_id == "openrouter":
+            st.caption(
+                "Key 已就绪。共享在线版仅在当前会话使用；自部署时放入根目录 .env 可长期保存。"
+            )
 
     with st.expander("🧠 高级设置（端点 · 模型 · 并发）"):
 
@@ -204,7 +219,12 @@ with st.sidebar:
 
         if preset["models"]:
             model_choice = st.selectbox(
-                "模型", preset["models"] + ["✏️ 其他（手动输入）"], key="llm_model"
+                "模型",
+                preset["models"] + ["✏️ 其他（手动输入）"],
+                format_func=lambda model_id: (
+                    "免费自动路由（推荐）" if model_id == "openrouter/free" else model_id
+                ),
+                key="llm_model",
             )
             model = (
                 st.text_input("自定义模型名称", key="llm_model_custom")
@@ -219,9 +239,9 @@ with st.sidebar:
 
         temperature = st.slider("Temperature", 0.0, 1.0, 0.2)
         col_b, col_w = st.columns(2)
-        batch_size = col_b.slider("批大小（条/请求）", 5, 30, 10)
-        max_workers = col_w.slider("并发请求数", 1, 8, 4)
-        st.caption("⚡ 并发批处理可大幅提升分类速度；但并发过高会触发平台限流(429)，退避重试反而变慢")
+        batch_size = col_b.slider("批大小（条/请求）", 5, 30, 20)
+        max_workers = col_w.slider("并发请求数", 1, 8, 1)
+        st.caption("免费模式默认每仓库抓取 40 条、每批 20 条、并发 1；减少请求量与突发限流。可按需调高。")
 
 # ---------------- 开始抓取与分析 ----------------
 if run_btn:

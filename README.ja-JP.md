@@ -83,9 +83,11 @@ flowchart LR
 
 「モデル設定」で主要 LLM をワンクリック切替：すべて **OpenAI Chat Compatibles 互換プロトコル**で統一されています。プロバイダを切り替えると公式エンドポイントとデフォルト モデルが自動入力され、各キーの取得先は入力欄のヘルプ テキストを参照してください。
 
+OpenRouter は既定で `openrouter/free` を使用し、利用可能な無料モデルへ自動ルーティングします。無料の OpenRouter キーが必要ですが、クレジット購入は不要です。既定はリポジトリあたり Issue 40 件、バッチ 20 件、同時実行 1 件で、無料枠の消費と突発的な制限を抑えます。共有オンライン版は訪問者のキーを保存しません。自分でデプロイする場合は、ルートの `.env` に `OPENROUTER_API_KEY` を設定してください。
+
 | プロバイダ | エンドポイント | キー環境変数 |
 | --- | --- | --- |
-| OpenRouter（デフォルト · Ox Alpha） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
+| OpenRouter（デフォルト · 無料自動ルーティング） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` |
 | Google Gemini | `…/v1beta/openai`（公式互換エンドポイント） | `GEMINI_API_KEY` |
 | Anthropic Claude | `https://api.anthropic.com/v1`（公式互換レイヤ） | `ANTHROPIC_API_KEY` |

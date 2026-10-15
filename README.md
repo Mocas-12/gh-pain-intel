@@ -91,15 +91,11 @@ to your analysis targets with one click.
 **OpenAI Chat Completions compatible protocol**. Switching a provider automatically fills in its official
 endpoint and default model; see the input help text for where to get each key.
 
-**Zero-cost analysis**: models ending in `:free` in the OpenRouter preset are free — just register at
-OpenRouter for a key, no top-up needed. The free tier is tightly rate-limited (about 20 req/min and
-50 req/day per OpenRouter's docs); a default analysis run (~14 requests) fits comfortably. Batches that
-fail due to free-tier throttling fall back automatically. To skip keys entirely, run a local Ollama
-(key-free provider).
+**Free analysis**: the default `openrouter/free` route selects an available free OpenRouter model; no top-up is needed, but you still need a free OpenRouter key. Free accounts have daily request limits and free models can be temporarily throttled. Defaults are 40 issues per repository, batches of 20, and one worker; two repositories usually take about six model requests, with retries adding more. The shared hosted app does not save visitor keys. For a self-hosted setup, put `OPENROUTER_API_KEY` in the project-root `.env` file to load it automatically. For no key at all, use local Ollama.
 
 | Provider | Endpoint | Key environment variable |
 | --- | --- | --- |
-| OpenRouter (default · GLM-5.3 Flash) | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
+| OpenRouter (default · free auto-routing) | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` |
 | Google Gemini | `…/v1beta/openai` (official compatible endpoint) | `GEMINI_API_KEY` |
 | Anthropic Claude | `https://api.anthropic.com/v1` (official compatibility layer) | `ANTHROPIC_API_KEY` |
@@ -236,8 +232,9 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 <details>
 <summary><b>Run analysis at zero cost (or key-free)</b></summary>
 
-- Zero cost: pick OpenRouter as the provider and choose a preset ending in <code>:free</code> (register for a free key, no top-up)
-- Free tier: about 20 req/min and 50 req/day; failed batches fall back automatically — lower concurrency and batch size for stability
+- Zero cost: the default <code>openrouter/free</code> model route needs a free OpenRouter key but no top-up
+- Defaults use 40 issues per repository, batch size 20, and one worker; free-tier limits and model availability can change
+- The shared hosted app does not save visitor keys; for self-hosting, put <code>OPENROUTER_API_KEY</code> in the project-root <code>.env</code>
 - Key-free: install Ollama locally and pick the "Ollama (local models)" provider — no key of any kind required
 </details>
 

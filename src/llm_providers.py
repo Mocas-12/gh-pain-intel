@@ -16,16 +16,14 @@ from __future__ import annotations
 
 PROVIDERS: dict[str, dict] = {
     "openrouter": {
-        "label": "OpenRouter（默认 · GLM-5.3 Flash）",
+        "label": "OpenRouter（默认 · 免费路由）",
         "short": "OpenRouter",
         "base_url": "https://openrouter.ai/api/v1",
-        # stealth/ox-alpha（GLM-5.3 Flash 的内测马甲）已于 2026-10-11 结束测试期下线，
-        # 默认模型改为公开上架的 z-ai/glm-5.3-flash（输入 $0.15/M、输出 $0.5/M tokens）。
+        # openrouter/free 自动路由到当前可用的免费模型，避免把易过期型号固定为默认值。
         # :free 结尾 = 零费用模型（仍需免费注册获取 Key）。免费名单随平台轮换，
-        # 以下为 2026-10-11 经 /api/v1/models 实时核验的通用大上下文型号；
-        # 刷新方法：curl -s https://openrouter.ai/api/v1/models 再过滤 ":free"
+        # 以下型号保留为手动选择项。
         "models": [
-            "z-ai/glm-5.3-flash",
+            "openrouter/free",
             "thinkingmachines/inkling-small:free",
             "nvidia/nemotron-3-super-120b-a12b:free",
             "google/gemma-4-31b-it:free",
@@ -39,8 +37,8 @@ PROVIDERS: dict[str, dict] = {
         "key_env": "OPENROUTER_API_KEY",
         "key_url": "https://openrouter.ai/keys",
         "key_hint": "sk-or-v1-…",
-        "note": "🆓 模型名以 :free 结尾即零费用（仍需免费注册获取 Key）；免费档限流较严，"
-                "个别批次可能失败并自动兜底，追求稳定请选付费模型",
+        "note": "🆓 免费路由会自动选择可用免费模型；需要免费的 OpenRouter Key。免费档有调用限制，"
+                "若遇限流可稍后重试，或手动切换付费模型",
     },
     "openai": {
         "label": "OpenAI（GPT 系列）",

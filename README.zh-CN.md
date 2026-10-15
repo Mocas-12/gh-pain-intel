@@ -88,13 +88,11 @@ flowchart LR
 「模型设置」可在主流大模型之间一键切换：全走 **OpenAI Chat Completions 兼容协议**，
 切换服务商时自动带出官方端点与默认模型，Key 的获取地址见输入框帮助文字。
 
-**零成本分析**：OpenRouter 预设里 `:free` 结尾的模型免费——免费注册 OpenRouter 取 Key 即可，无需充值。
-免费档限流较严（约 20 次/分、50 次/天，以官方文档为准），单次默认分析约 14 次请求够用；
-免费模型偶发限流导致的失败批次会自动兜底。完全不申请任何 Key 的替代：本地 Ollama（免 Key）。
+**免费分析**：默认使用 OpenRouter 的 `openrouter/free` 自动路由到可用免费模型，无需充值；仍需创建免费的 OpenRouter Key。免费账户有每日请求上限，免费模型也可能临时限流。默认每仓库抓取 40 条、每批 20 条、并发 1；两个仓库通常约需 6 次模型请求，失败重试会增加用量。共享在线版不会保存访客 Key；自部署可将 `OPENROUTER_API_KEY` 写入根目录 `.env`，以后自动读取。完全免 Key 可使用本地 Ollama。
 
 | 服务商 | 端点 | Key 环境变量 |
 | --- | --- | --- |
-| OpenRouter（默认 · GLM-5.3 Flash） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
+| OpenRouter（默认 · 免费自动路由） | `https://openrouter.ai/api/v1` | `OPENROUTER_API_KEY` |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` |
 | Google Gemini | `…/v1beta/openai`（官方兼容端点） | `GEMINI_API_KEY` |
 | Anthropic Claude | `https://api.anthropic.com/v1`（官方兼容层） | `ANTHROPIC_API_KEY` |
@@ -231,8 +229,9 @@ GEMINI_API_KEY = "AIza…"        # 用到哪家配哪家
 <details>
 <summary><b>想零成本（或免 Key）跑分析</b></summary>
 
-- 零费用：服务商选 OpenRouter，模型选 <code>:free</code> 结尾的预设（免费注册取 Key，无需充值）
-- 免费档限流约 20 次/分、50 次/天；批次失败会自动兜底，降低并发与批大小更稳
+- 零费用：默认模型为 <code>openrouter/free</code>，免费注册取 Key 即可使用，无需充值
+- 默认每仓库 40 条、批大小 20、并发 1；免费档请求限额与模型可用性会变化，限流时稍后重试
+- 在线版不会替访客保存个人 Key；自部署可在根目录 <code>.env</code> 配置 <code>OPENROUTER_API_KEY</code>
 - 免 Key：本地安装 Ollama，服务商选「Ollama（本地模型）」即可，完全无需申请任何 Key
 </details>
 
