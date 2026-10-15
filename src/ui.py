@@ -29,8 +29,8 @@ LANG_COLORS = {
 _CSS = """
 <style>
 :root {
-  --bg:#0e0e11; --panel:rgba(255,255,255,.055); --panel-strong:rgba(255,255,255,.085);
-  --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.14);
+  --bg:#0d1016; --panel:rgba(255,255,255,.052); --panel-strong:rgba(255,255,255,.09);
+  --line:rgba(255,255,255,.12); --line-strong:rgba(255,255,255,.2);
   --txt:#f5f5f7; --sub:#a1a1a6; --faint:#6e6e73;
   --blue:#0a84ff; --green:#30d158; --orange:#ff9f0a; --red:#ff453a;
 }
@@ -38,9 +38,10 @@ _CSS = """
 /* ---------- 全局 ---------- */
 .stApp {
   background:
-    radial-gradient(1200px 560px at 82% -10%, rgba(10,132,255,.07), transparent 62%),
-    radial-gradient(900px 480px at 6% 110%, rgba(191,90,242,.05), transparent 58%),
-    var(--bg);
+    radial-gradient(ellipse 72% 38% at 54% -8%, rgba(85,115,162,.16), transparent 68%),
+    radial-gradient(ellipse 28% 42% at 4% 42%, rgba(30,86,143,.09), transparent 72%),
+    radial-gradient(ellipse 32% 38% at 96% 76%, rgba(93,71,126,.07), transparent 74%),
+    linear-gradient(155deg,#111722 0%,#0c0f15 48%,#111116 100%);
 }
 html, body, .stApp, [class*="css"] {
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',
@@ -62,20 +63,25 @@ hr { border-color:var(--line); }
 
 /* ---------- 玻璃面板基元 ---------- */
 .glass, .stat-card, .theme-card, .gain-card {
-  background:var(--panel);
-  -webkit-backdrop-filter:blur(24px) saturate(150%);
-  backdrop-filter:blur(24px) saturate(150%);
-  border:1px solid var(--line);
+  background:
+    linear-gradient(138deg,rgba(255,255,255,.095) 0%,rgba(255,255,255,.045) 32%,rgba(255,255,255,.018) 76%),
+    rgba(24,29,39,.42);
+  -webkit-backdrop-filter:blur(30px) saturate(165%);
+  backdrop-filter:blur(30px) saturate(165%);
+  border:1px solid rgba(255,255,255,.15);
   border-radius:18px;
-  box-shadow:0 8px 30px rgba(0,0,0,.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(255,255,255,.025),
+    0 10px 28px rgba(0,0,0,.3),0 26px 54px rgba(0,0,0,.16);
 }
 
 /* ---------- 侧边栏 ---------- */
 section[data-testid="stSidebar"] {
-  background:rgba(18,18,21,.72);
-  -webkit-backdrop-filter:blur(28px) saturate(150%);
-  backdrop-filter:blur(28px) saturate(150%);
-  border-right:1px solid var(--line);
+  background:linear-gradient(155deg,rgba(255,255,255,.075),rgba(19,23,31,.78) 38%,rgba(14,16,22,.72));
+  -webkit-backdrop-filter:blur(32px) saturate(170%);
+  backdrop-filter:blur(32px) saturate(170%);
+  border-right:1px solid rgba(255,255,255,.14);
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.035),8px 0 30px rgba(0,0,0,.12);
 }
 section[data-testid="stSidebar"] * { color:var(--txt); }
 section[data-testid="stSidebar"] hr { margin:.4rem 0; border-color:var(--line); }
@@ -112,7 +118,11 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 /* 首页主视觉：用真实榜单数据构成信号脉冲，而不是装饰性渐变 */
 .intel-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,.62fr);
   gap:28px; align-items:center; padding:22px 24px; margin:.1rem 0 1.25rem;
-  border:1px solid var(--line); border-radius:20px; background:rgba(255,255,255,.035); }
+  border:1px solid rgba(255,255,255,.17); border-radius:20px;
+  background:linear-gradient(122deg,rgba(255,255,255,.105),rgba(73,103,148,.09) 38%,rgba(255,255,255,.025) 78%),rgba(20,25,35,.34);
+  -webkit-backdrop-filter:blur(34px) saturate(175%); backdrop-filter:blur(34px) saturate(175%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.19),inset 0 -1px 0 rgba(255,255,255,.035),
+    0 16px 42px rgba(0,0,0,.3),0 3px 12px rgba(0,0,0,.2); }
 .intel-copy .hero { padding:0; }
 .intel-kicker { color:var(--green); font-size:.76rem; font-weight:600; margin-bottom:.55rem; }
 .intel-copy .hero h1 { font-size:2rem; }
@@ -142,11 +152,15 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .signal-foot { display:flex; justify-content:space-between; gap:8px; color:var(--faint); font-size:.72rem; margin-top:7px; }
 .focus-card { display:grid; grid-template-columns:170px minmax(0,1fr); gap:18px;
   align-items:start; padding:14px 18px; margin:0 0 .7rem;
-  border-left:2px solid var(--orange); background:rgba(255,159,10,.055); }
+  border:1px solid rgba(255,255,255,.12); border-left:2px solid var(--orange);
+  background:linear-gradient(120deg,rgba(255,159,10,.09),rgba(255,255,255,.035) 52%),rgba(24,27,34,.32);
+  -webkit-backdrop-filter:blur(24px) saturate(155%); backdrop-filter:blur(24px) saturate(155%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.18); }
 .focus-label { color:var(--orange); font-size:.78rem; font-weight:600; }
 .focus-main { color:var(--txt); font-size:.96rem; font-weight:600; }
 .focus-detail { color:var(--sub); font-size:.82rem; line-height:1.55; margin-top:3px; }
-.focus-empty { border-left-color:var(--blue); background:rgba(10,132,255,.045); }
+.focus-empty { border-left-color:var(--blue);
+  background:linear-gradient(120deg,rgba(10,132,255,.09),rgba(255,255,255,.035) 52%),rgba(24,27,34,.32); }
 .focus-empty .focus-label { color:var(--blue); }
 .home-action-copy { color:var(--sub); font-size:.84rem; line-height:1.5; }
 
@@ -275,10 +289,10 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .stButton > button {
   width:100%; border:1px solid var(--line-strong); border-radius:980px;
   font-weight:600; color:var(--txt);
-  background:rgba(255,255,255,.12);
+  background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.075));
   -webkit-backdrop-filter:blur(24px) saturate(150%);
   backdrop-filter:blur(24px) saturate(150%);
-  box-shadow:0 8px 30px rgba(0,0,0,.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 8px 24px rgba(0,0,0,.32);
   transition:background .15s ease;
 }
 .stButton > button:hover { background:rgba(255,255,255,.2); }
@@ -300,6 +314,20 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 }
 
 /* ---------- 输入控件 ---------- */
+section[data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] > div,
+section[data-testid="stSidebar"] [data-testid="stTextArea"] textarea,
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+  background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.075);
+  -webkit-backdrop-filter:blur(18px) saturate(145%);
+  backdrop-filter:blur(18px) saturate(145%);
+}
+section[data-testid="stSidebar"] [data-baseweb="input"]:focus-within,
+section[data-testid="stSidebar"] [data-baseweb="select"]:focus-within {
+  border-color:rgba(10,132,255,.55) !important;
+  box-shadow:0 0 0 2px rgba(10,132,255,.14),inset 0 1px 0 rgba(255,255,255,.1);
+}
 .stDownloadButton > button {
   width:100%; border:1px solid var(--line-strong); border-radius:980px;
   background:rgba(255,255,255,.06); color:var(--txt); font-weight:600;
