@@ -106,7 +106,7 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   animation:pulse 2.4s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 @media (prefers-reduced-motion: reduce) {
-  .hero-dot { animation:none; }
+  .hero-dot, .signal-item i { animation:none; }
   .stat-card, .theme-card, .gain-card { transition:none; }
 }
 .hero h1 {
@@ -118,11 +118,12 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 /* 首页主视觉：用真实榜单数据构成信号脉冲，而不是装饰性渐变 */
 .intel-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,.62fr);
   gap:28px; align-items:center; padding:22px 24px; margin:.1rem 0 1.25rem;
-  border:1px solid rgba(255,255,255,.17); border-radius:20px;
-  background:linear-gradient(122deg,rgba(255,255,255,.105),rgba(73,103,148,.09) 38%,rgba(255,255,255,.025) 78%),rgba(20,25,35,.34);
+  border:1px solid rgba(255,255,255,.19); border-radius:22px;
+  background:radial-gradient(ellipse 72% 120% at 100% 0%,rgba(255,159,10,.13),transparent 68%),
+    linear-gradient(122deg,rgba(255,255,255,.12),rgba(73,103,148,.08) 38%,rgba(255,255,255,.025) 78%),rgba(20,25,35,.34);
   -webkit-backdrop-filter:blur(34px) saturate(175%); backdrop-filter:blur(34px) saturate(175%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.19),inset 0 -1px 0 rgba(255,255,255,.035),
-    0 16px 42px rgba(0,0,0,.3),0 3px 12px rgba(0,0,0,.2); }
+    0 20px 48px rgba(0,0,0,.34),0 3px 12px rgba(0,0,0,.2); }
 .intel-copy .hero { padding:0; }
 .intel-kicker { color:var(--green); font-size:.76rem; font-weight:600; margin-bottom:.55rem; }
 .intel-copy .hero h1 { font-size:2rem; }
@@ -130,6 +131,7 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .signal-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
 .signal-label { font-size:.78rem; color:var(--sub); }
 .signal-value { font-size:1.55rem; font-weight:650; font-variant-numeric:tabular-nums; }
+.signal-top .signal-value { color:#ffd08a; text-shadow:0 0 22px rgba(255,159,10,.18); }
 .signal-unit { color:var(--sub); font-size:.78rem; margin-left:5px; }
 .signal-scale { display:flex; justify-content:space-between; color:var(--faint); font-size:.68rem; margin-top:8px; }
 .signal-bars { height:52px; display:flex; align-items:end; gap:5px; margin:2px 0 0;
@@ -138,8 +140,17 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   justify-content:end; align-items:center; gap:3px; }
 .signal-item i { display:block; width:100%; max-width:22px; min-height:3px;
   border-radius:3px 3px 1px 1px;
-  background:rgba(48,209,88,.72); }
+  background:rgba(48,209,88,.72); transform-origin:bottom;
+  animation:signal-rise .65s cubic-bezier(.2,.75,.25,1) both; }
+.signal-item:nth-child(2) i { animation-delay:45ms; }
+.signal-item:nth-child(3) i { animation-delay:90ms; }
+.signal-item:nth-child(4) i { animation-delay:135ms; }
+.signal-item:nth-child(5) i { animation-delay:180ms; }
+.signal-item:nth-child(6) i { animation-delay:225ms; }
+.signal-item:nth-child(7) i { animation-delay:270ms; }
+.signal-item:nth-child(8) i { animation-delay:315ms; }
 .signal-item:first-child i { background:rgba(255,159,10,.9); }
+@keyframes signal-rise { from { transform:scaleY(.15); opacity:.35; } to { transform:scaleY(1); opacity:1; } }
 .signal-item small { color:var(--faint); font-size:.62rem; line-height:1; }
 .signal-feature { display:flex; align-items:flex-start; gap:9px; margin-top:10px; }
 .signal-rank { color:var(--orange); font-size:.7rem; font-weight:700; padding-top:2px; }
@@ -193,20 +204,34 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 
 /* ---------- Star 增幅榜 ---------- */
 .section-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
-  margin:.15rem 0 .7rem; }
+  margin:.35rem 0 .85rem; padding:0 0 .65rem;
+  border-bottom:1px solid rgba(255,255,255,.09); }
 .section-title {
-  font-size:1.3rem; font-weight:700; letter-spacing:-.02em; color:var(--txt);
+  font-size:1.32rem; font-weight:700; letter-spacing:-.025em; color:var(--txt);
 }
 .section-sub { color:var(--sub); font-size:.8rem; }
 .gain-card {
   position:relative; overflow:hidden; height:100%; min-height:142px;
   padding:10px 14px 9px 54px;
   display:flex; flex-direction:column; align-items:stretch;
-  transition:background .18s ease, transform .18s ease;
+  background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.018)),rgba(19,23,31,.38);
+  border-color:rgba(255,255,255,.105); border-radius:15px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 7px 20px rgba(0,0,0,.2);
+  transition:background .18s ease, border-color .18s ease, transform .18s ease;
 }
 .gain-card:hover {
-  background:var(--panel-strong); transform:translateY(-1px);
+  background:linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.03)),rgba(19,23,31,.48);
+  border-color:var(--line-strong); transform:translateY(-2px);
 }
+.gain-top-1 { border-color:rgba(255,159,10,.4); border-radius:17px;
+  background:radial-gradient(ellipse 90% 75% at 0% 0%,rgba(255,159,10,.13),transparent 72%),
+    linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025)),rgba(26,25,27,.46);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 2px 0 0 rgba(255,159,10,.7),
+    0 10px 26px rgba(0,0,0,.24),0 0 24px rgba(255,159,10,.045); }
+.gain-top-2 { border-color:rgba(214,222,235,.22); }
+.gain-top-3 { border-color:rgba(205,128,82,.24); }
+.gain-top-1 .gain-rank { font-size:22px; text-shadow:0 0 18px rgba(255,159,10,.25); }
+.gain-card a:focus-visible { outline:2px solid var(--blue); outline-offset:3px; border-radius:3px; }
 .gain-rank {
   position:absolute; left:16px; top:50%; transform:translateY(-50%);
   font-size:19px; font-weight:700; color:var(--rc,var(--faint));
@@ -338,6 +363,10 @@ section[data-testid="stSidebar"] [data-baseweb="select"]:focus-within {
 }
 .stDownloadButton > button:hover { background:rgba(255,255,255,.1); }
 input, textarea { border-radius:12px !important; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-dot, .signal-item i { animation:none; }
+  .gain-card { transition:none; }
+}
 """
 
 
@@ -495,7 +524,7 @@ def gain_card(item: dict, rank: int) -> str:
     else:
         dot, lang_txt = "", "-"
     return (
-        f'<div class="gain-card" style="--rc:{rank_color}">'
+        f'<div class="gain-card gain-top-{rank}" style="--rc:{rank_color}">'
         f'<div class="gain-rank">{rank:02d}</div>'
         '<div class="gain-head">'
         f'<a class="gain-name" href="{esc(item.get("url", "#"))}" target="_blank" '
