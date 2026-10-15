@@ -199,8 +199,9 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 }
 .section-sub { color:var(--sub); font-size:.8rem; }
 .gain-card {
-  position:relative; overflow:hidden; height:100%;
+  position:relative; overflow:hidden; height:100%; min-height:142px;
   padding:10px 14px 9px 54px;
+  display:flex; flex-direction:column; align-items:stretch;
   transition:background .18s ease, transform .18s ease;
 }
 .gain-card:hover {
@@ -211,18 +212,21 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   font-size:19px; font-weight:700; color:var(--rc,var(--faint));
   font-variant-numeric:tabular-nums; letter-spacing:-.02em;
 }
+.gain-head { display:flex; align-items:center; gap:8px; min-width:0; min-height:24px; }
 .gain-name {
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   font-size:1rem; font-weight:600; color:var(--txt);
-  text-decoration:none; word-break:break-all; letter-spacing:-.01em;
+  text-decoration:none; letter-spacing:-.01em;
 }
 .gain-name:hover { color:var(--blue); }
+.gain-head .board-tag { flex:none; margin-left:0; }
 .gain-meta {
-  margin-top:3px; font-size:12px; color:var(--sub);
+  min-height:19px; margin-top:3px; font-size:12px; color:var(--sub);
   font-variant-numeric:tabular-nums;
 }
 .gain-meta b { color:var(--green); font-weight:600; font-size:13px; }
 .gain-desc {
-  margin-top:3px; color:var(--sub); font-size:.83rem; line-height:1.45;
+  min-height:2.9em; margin-top:3px; color:var(--sub); font-size:.83rem; line-height:1.45;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
 }
 .board-tag {
@@ -238,7 +242,7 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   display:inline-block; width:8px; height:8px; border-radius:50%;
   background:var(--lc,#8e8e93); margin-right:5px;
 }
-.topic-row { margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; }
+.topic-row { margin-top:auto; min-height:19px; padding-top:6px; display:flex; gap:6px; flex-wrap:wrap; }
 .topic-chip {
   font-size:10.5px; color:var(--sub);
   background:rgba(255,255,255,.06); border:1px solid var(--line);
@@ -484,7 +488,7 @@ def gain_card(item: dict, rank: int) -> str:
         tag = ""
     topics = [esc(t) for t in (item.get("topics") or [])[:4]]
     chips = "".join(f'<span class="topic-chip">#{t}</span>' for t in topics)
-    topic_row = f'<div class="topic-row">{chips}</div>' if chips else ""
+    topic_row = f'<div class="topic-row">{chips}</div>'
     if lang and lang != "-":
         dot = f'<span class="lang-dot" style="--lc:{LANG_COLORS.get(lang, "#8e8e93")}"></span>'
         lang_txt = esc(lang)
@@ -493,12 +497,13 @@ def gain_card(item: dict, rank: int) -> str:
     return (
         f'<div class="gain-card" style="--rc:{rank_color}">'
         f'<div class="gain-rank">{rank:02d}</div>'
-        f'<a class="gain-name" href="{esc(item.get("url", "#"))}" target="_blank">'
-        f'{esc(item.get("repo", "?"))}</a>{tag}'
+        '<div class="gain-head">'
+        f'<a class="gain-name" href="{esc(item.get("url", "#"))}" target="_blank" '
+        f'title="{esc(item.get("repo", "?"))}">{esc(item.get("repo", "?"))}</a>{tag}</div>'
         f'<div class="gain-meta"><b>+{int(item.get("gained", 0)):,}</b> ⭐ 今日'
         f' · 全站 {int(item.get("stars", 0)):,}'
         f' · {dot}{lang_txt}</div>'
-        + (f'<div class="gain-desc">{esc(desc)}</div>' if desc else "")
+        + f'<div class="gain-desc">{esc(desc)}</div>'
         + topic_row
         + "</div>"
     )
