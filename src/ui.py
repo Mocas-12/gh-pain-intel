@@ -125,8 +125,19 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   box-shadow:inset 0 1px 0 rgba(255,255,255,.19),inset 0 -1px 0 rgba(255,255,255,.035),
     0 20px 48px rgba(0,0,0,.34),0 3px 12px rgba(0,0,0,.2); }
 .intel-copy .hero { padding:0; }
-.intel-kicker { color:var(--green); font-size:.76rem; font-weight:600; margin-bottom:.55rem; }
-.intel-copy .hero h1 { font-size:2rem; }
+.intel-kicker { display:inline-flex; align-items:center; gap:8px; margin-bottom:.8rem;
+  padding:6px 10px; border:1px solid rgba(255,255,255,.13); border-radius:999px;
+  background:rgba(255,255,255,.045); color:#c5d2c9; font-size:.72rem; font-weight:550; }
+.intel-kicker .hero-dot { width:6px; height:6px; flex:none; }
+.intel-kicker i { color:var(--sub); font-style:normal; }
+.intel-copy .hero h1 { font-size:2.2rem; line-height:1.08; letter-spacing:-.045em; }
+.intel-title-line { display:block; }
+.intel-title-line + .intel-title-line { color:#d8dfeb; font-size:.88em; letter-spacing:-.035em; }
+.intel-subjects { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:15px; }
+.intel-subject { display:inline-flex; align-items:center; gap:6px; color:#c4c9d2;
+  border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:5px 8px;
+  background:rgba(255,255,255,.035); font-size:.7rem; }
+.intel-subject::before { content:""; width:4px; height:4px; border-radius:50%; background:var(--orange); }
 .signal-panel { padding:15px 17px; border-left:1px solid var(--line-strong); }
 .signal-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
 .signal-label { font-size:.78rem; color:var(--sub); }
@@ -422,9 +433,13 @@ def intel_hero(items: list[dict], updated_at: object = None) -> None:
     update_text = f"更新于 {updated_at:%H:%M}" if updated_at else "GitHub Trending 每日更新"
     st.markdown(
         '<section class="intel-hero">'
-        '<div class="intel-copy"><div class="intel-kicker">社区信号 · 实时观察</div>'
-        '<div class="hero"><h1>开源社区痛点情报中心</h1>'
-        '<div class="hero-sub">从 GitHub Issue 与项目热度中，发现正在升温的需求和问题。</div></div>'
+        '<div class="intel-copy"><div class="intel-kicker"><span class="hero-dot"></span>'
+        '<span>社区信号</span><i>实时观察</i></div>'
+        '<div class="hero"><h1><span class="intel-title-line">Open Source</span>'
+        '<span class="intel-title-line">Pain Intelligence</span></h1>'
+        '<div class="hero-sub">从 GitHub Issue 与项目热度中，发现正在升温的需求和问题。</div>'
+        '<div class="intel-subjects"><span class="intel-subject">GitHub Issues</span>'
+        '<span class="intel-subject">Star 增长</span><span class="intel-subject">社区需求</span></div></div>'
         '</div><div class="signal-panel"><div class="signal-top">'
         '<span class="signal-label">今日 Star 增幅榜首</span>'
         f'<span><b class="signal-value">{peak_text}</b><span class="signal-unit">stars</span></span>'
