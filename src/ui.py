@@ -33,6 +33,8 @@ _CSS = """
   --line:rgba(255,255,255,.12); --line-strong:rgba(255,255,255,.2);
   --txt:#f5f5f7; --sub:#a1a1a6; --faint:#6e6e73;
   --blue:#0a84ff; --green:#30d158; --orange:#ff9f0a; --red:#ff453a;
+  --font-ui:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Segoe UI',system-ui,sans-serif;
+  --text-small:.78rem;
 }
 
 /* ---------- 全局 ---------- */
@@ -44,11 +46,15 @@ _CSS = """
     linear-gradient(155deg,#111722 0%,#0c0f15 48%,#111116 100%);
 }
 html, body, .stApp, [class*="css"] {
-  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',
-    'Segoe UI',system-ui,sans-serif;
+  font-family:var(--font-ui);
   color: var(--txt);
   -webkit-font-smoothing:antialiased;
 }
+.stApp { line-height:1.55; }
+.stApp h1, .stApp h2, .stApp h3 { line-height:1.2; letter-spacing:-.025em; }
+.stApp h2 { font-size:1.25rem; font-weight:650; }
+.stApp h3 { font-size:1.05rem; font-weight:620; }
+.stApp [data-testid="stCaptionContainer"] { color:var(--sub); font-size:var(--text-small); }
 .block-container { padding-top:1.1rem; max-width:1400px; }
 #MainMenu, footer { visibility:hidden; }
 header[data-testid="stHeader"] { background:transparent; }
@@ -187,17 +193,26 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .home-action-copy { color:var(--sub); font-size:.84rem; line-height:1.5; }
 
 /* ---------- 统计卡 ---------- */
-.stat-grid { display:flex; gap:13px; flex-wrap:wrap; margin:.35rem 0 1rem 0; }
-.stat-card { flex:1 1 160px; min-width:158px; padding:16px 18px 14px; }
+.stat-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:0;
+  margin:.35rem 0 1.1rem; padding:5px 0;
+  border:1px solid rgba(255,255,255,.11); border-radius:15px;
+  background:linear-gradient(110deg,rgba(255,255,255,.055),rgba(255,255,255,.018)),rgba(18,22,29,.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
+.stat-card { min-width:0; padding:13px 16px 12px; background:transparent;
+  -webkit-backdrop-filter:none; backdrop-filter:none; border:0; border-radius:0; box-shadow:none; }
+.stat-card:not(:last-child) { border-right:1px solid rgba(255,255,255,.09); }
 .stat-num {
-  font-size:27px; font-weight:600; color:var(--txt);
+  font-size:25px; font-weight:650; color:var(--txt);
   letter-spacing:-.02em; font-variant-numeric:tabular-nums;
 }
 .stat-num small { font-size:15px; color:var(--sub); font-weight:500; }
 .stat-label { margin-top:5px; font-size:12px; font-weight:500; color:var(--sub); }
 
 /* ---------- 主题洞察卡 ---------- */
-.theme-card { padding:16px 19px; margin-bottom:13px; }
+.theme-card { padding:15px 18px; margin-bottom:11px; border-radius:13px;
+  background:linear-gradient(120deg,rgba(255,255,255,.048),rgba(255,255,255,.018)),rgba(18,22,29,.28);
+  -webkit-backdrop-filter:blur(20px) saturate(145%); backdrop-filter:blur(20px) saturate(145%);
+  border-color:rgba(255,255,255,.09); box-shadow:inset 0 1px 0 rgba(255,255,255,.075),0 5px 15px rgba(0,0,0,.16); }
 .theme-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .theme-name { font-size:1.05rem; font-weight:600; color:var(--txt); letter-spacing:-.01em; }
 .badge {
@@ -346,11 +361,22 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
   .hero-sub { display:none; }  /* 副标题折行占地，手机端隐藏 */
   /* 手机端增加呼吸感：页头与侧栏间距恢复常态（桌面紧凑化不适用于触屏小窗） */
   .block-container { padding-top:1.3rem; }
+  .stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .stat-card:nth-child(3n) { border-right:1px solid rgba(255,255,255,.09); }
+  .stat-card:nth-child(2n) { border-right:0; }
+  .stat-card:nth-child(n+3) { border-top:1px solid rgba(255,255,255,.09); }
+  .stat-card { padding:12px 11px; }
+  .stat-num { font-size:22px; }
   section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap:.75rem !important; }
   /* ➕ 按钮列隐藏：窄屏列堆叠后它脱离卡片独占一条全宽灰杠，
      而「加仓库到分析目标」是桌面场景，手机上看榜不需要 */
   [data-testid="stHorizontalBlock"]:has(.gain-card)
     > [data-testid="stColumn"]:not(:has(.gain-card)) { display:none; }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .stat-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .stat-card:nth-child(3n) { border-right:0; }
+  .stat-card:nth-child(n+4) { border-top:1px solid rgba(255,255,255,.09); }
 }
 
 /* ---------- 输入控件 ---------- */

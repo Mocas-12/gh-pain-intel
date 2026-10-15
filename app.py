@@ -59,19 +59,6 @@ except Exception as exc:
 
 ts = last_updated()
 intel_hero(hot_repos, ts)
-home_focus(st.session_state.result)
-
-action_col, action_copy = st.columns([1.15, 5], vertical_alignment="center")
-with action_col:
-    run_btn = st.button(
-        "开始分析 Issue", type="primary", use_container_width=True, key="start_analysis"
-    )
-with action_copy:
-    st.markdown(
-        '<div class="home-action-copy">抓取近期 Issue，生成高频痛点、功能诉求与趋势报告。'
-        '仓库和模型参数在左侧配置。</div>',
-        unsafe_allow_html=True,
-    )
 head_col, refresh_col = st.columns([0.95, 0.05], vertical_alignment="center")
 with head_col:
     sub = "GitHub 官方 Trending · 最近一天新增星标 · 每日更新"
@@ -116,6 +103,19 @@ if hot_repos:
             )
 else:
     st.info("榜单暂无数据：数据源为 GitHub 官方 Trending 页面，稍后刷新页面重试")
+
+section_head("从增长到问题", "选择目标仓库，继续分析社区近期 Issue")
+action_col, action_copy = st.columns([1.15, 5], vertical_alignment="center")
+with action_col:
+    run_btn = st.button(
+        "开始分析 Issue", type="primary", use_container_width=True, key="start_analysis"
+    )
+with action_copy:
+    st.markdown(
+        '<div class="home-action-copy">从仓库热度进入真实反馈，提炼高频痛点、功能诉求与趋势。'
+        '仓库和模型参数在左侧配置。</div>',
+        unsafe_allow_html=True,
+    )
 
 st.divider()
 
@@ -383,6 +383,7 @@ if st.session_state.result:
     neg = sum(1 for c in classified if c["emotion"] in ("negative", "angry"))
     total = len(classified)
 
+    section_head("Issue 分析结果", f"{total} 条样本 · {meta.get('generated_at', '刚刚完成')}")
     stat_cards(
         [
             ("分析样本", f"{total}<small> 条</small>", "#0a84ff"),
@@ -392,6 +393,7 @@ if st.session_state.result:
             ("整体情绪", trends.get("overall_sentiment", "N/A"), "#bf5af2"),
         ]
     )
+    home_focus(result)
 
     tab_pain, tab_feat, tab_trend, tab_report = st.tabs(
         ["🐞 高频痛点", "🚀 功能诉求", "📈 情绪与趋势", "📄 研究报告"]
@@ -403,6 +405,32 @@ if st.session_state.result:
             [t for t in themes if t["category"] == "bug"],
             key=lambda t: (SEVERITY_ORDER.get(str(t["severity"]), 1), -t["frequency"]),
         )
+        section_head("高频缺陷主题", "按关联 Issue 数排序，颜色表示风险级别")
+        if pain_themes:
+            fig = px.bar(
+                pain_themes[:6],
+                x="frequency",
+                y="name",
+                color="severity",
+                orientation="h",
+                text="frequency",
+                color_discrete_map={"高": "#ff453a", "中": "#ff9f0a", "低": "#0a84ff"},
+                labels={"frequency": "相关 Issue", "name": "", "severity": "风险"},
+            )
+            fig.update_traces(textposition="outside", cliponaxis=False)
+            fig.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                height=max(220, 42 * len(pain_themes[:6]) + 70),
+                margin=dict(l=8, r=28, t=8, b=8),
+                xaxis_title=None,
+                yaxis_title=None,
+                legend_title_text="",
+            )
+            fig.update_xaxes(gridcolor="rgba(255,255,255,.07)", rangemode="tozero")
+            fig.update_yaxes(autorange="reversed", showgrid=False)
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
         for t in pain_themes:
             st.markdown(theme_card(t), unsafe_allow_html=True)
         st.divider()
@@ -428,6 +456,7 @@ if st.session_state.result:
         feat_themes = sorted(
             [t for t in themes if t["category"] == "feature"], key=lambda t: -t["frequency"]
         )
+        section_head("功能诉求", f"识别到 {len(feat_themes)} 个需求主题")
         for t in feat_themes:
             st.markdown(theme_card(t), unsafe_allow_html=True)
         if trends.get("opportunities"):
@@ -435,6 +464,7 @@ if st.session_state.result:
 
     # ----- 板块三 -----
     with tab_trend:
+        section_head("社区情绪", "查看近期 Issue 的情绪分布与风险信号")
         emo_order = ["positive", "neutral", "negative", "angry"]
         emo_counts = [sum(1 for c in classified if c["emotion"] == k) for k in emo_order]
         emo_colors = {
@@ -444,23 +474,26 @@ if st.session_state.result:
             "angry": "#ff453a",
         }
         fig = px.bar(
-            x=[EMO_ZH[k] for k in emo_order],
-            y=emo_counts,
+            x=emo_counts,
+            y=[EMO_ZH[k] for k in emo_order],
             color=[EMO_ZH[k] for k in emo_order],
+            text=emo_counts,
+            orientation="h",
             color_discrete_map={EMO_ZH[k]: emo_colors[k] for k in emo_order},
         )
+        fig.update_traces(textposition="outside", cliponaxis=False)
         fig.update_layout(
             template="plotly_dark",
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             showlegend=False,
-            height=340,
-            margin=dict(l=10, r=10, t=24, b=10),
+            height=270,
+            margin=dict(l=10, r=26, t=12, b=8),
             yaxis_title=None,
             xaxis_title=None,
         )
-        fig.update_xaxes(gridcolor="rgba(255,255,255,.08)")
-        fig.update_yaxes(gridcolor="rgba(255,255,255,.08)")
+        fig.update_xaxes(gridcolor="rgba(255,255,255,.08)", rangemode="tozero")
+        fig.update_yaxes(showgrid=False, autorange="reversed")
         st.plotly_chart(fig, use_container_width=True)
         if trends.get("hot_topics"):
             st.markdown("**🔥 热度上升话题**：" + "；".join(trends["hot_topics"]))
@@ -470,6 +503,7 @@ if st.session_state.result:
 
     # ----- 报告 -----
     with tab_report:
+        section_head("研究报告", "完整导出本次仓库分析结果")
         md = build_report(meta, result)
         fname = "pain-intel-" + meta["generated_at"].replace(":", "").replace(" ", "_") + ".md"
         st.download_button(
