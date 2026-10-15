@@ -21,17 +21,10 @@ from src.llm_providers import PROVIDERS
 from src.report import EMO_ZH, SEVERITY_ORDER, build_report, pct_str
 from src.scraper import GitHubRateLimitError, GitHubClient, fetch_many
 from src.trending import get_star_gainers, last_updated
-from src.ui import gain_card, hero, inject, section_head, stat_cards, theme_card
+from src.ui import gain_card, inject, intel_hero, section_head, stat_cards, theme_card
 
 st.set_page_config(page_title="GH-PAIN-INTEL · 痛点情报中心", page_icon="🛰️", layout="wide")
 inject()
-
-hero(
-    "",
-    "开源社区痛点情报中心",
-    "GitHub Issue 监控 → 多模型深度语义分析 → 一键导出市场研究报告（只读 · 内部研究用途）",
-)
-
 
 def _add_repo(repo: str) -> None:
     """把仓库追加到侧边栏目标列表（去重）。"""
@@ -53,9 +46,11 @@ except Exception as exc:
     st.caption(f"⚠️ 榜单暂时不可用：{exc}")
     hot_repos = []
 
+ts = last_updated()
+intel_hero(hot_repos, ts)
+
 head_col, refresh_col = st.columns([0.95, 0.05], vertical_alignment="center")
 with head_col:
-    ts = last_updated()
     sub = "GitHub 官方 Trending · 最近一天新增星标 · 每日更新"
     if ts:
         sub += f" · 更新于 {ts:%H:%M}"

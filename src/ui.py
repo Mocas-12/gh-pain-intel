@@ -109,6 +109,23 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 }
 .hero-sub { color:var(--sub); font-size:.9rem; letter-spacing:0; }
 
+/* 首页主视觉：用真实榜单数据构成信号脉冲，而不是装饰性渐变 */
+.intel-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,.62fr);
+  gap:28px; align-items:center; padding:22px 24px; margin:.1rem 0 1.25rem;
+  border:1px solid var(--line); border-radius:20px; background:rgba(255,255,255,.035); }
+.intel-copy .hero { padding:0; }
+.intel-kicker { color:var(--green); font-size:.76rem; font-weight:600; margin-bottom:.55rem; }
+.intel-copy .hero h1 { font-size:2rem; }
+.signal-panel { padding:15px 17px; border-left:1px solid var(--line-strong); }
+.signal-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+.signal-label { font-size:.78rem; color:var(--sub); }
+.signal-value { font-size:1.55rem; font-weight:650; font-variant-numeric:tabular-nums; }
+.signal-unit { color:var(--sub); font-size:.78rem; margin-left:5px; }
+.signal-bars { height:44px; display:flex; align-items:end; gap:5px; margin:10px 0 8px; }
+.signal-bars i { display:block; flex:1; min-width:4px; border-radius:3px 3px 1px 1px;
+  background:rgba(48,209,88,.72); }
+.signal-foot { display:flex; justify-content:space-between; gap:8px; color:var(--faint); font-size:.72rem; }
+
 /* ---------- 统计卡 ---------- */
 .stat-grid { display:flex; gap:13px; flex-wrap:wrap; margin:.35rem 0 1rem 0; }
 .stat-card { flex:1 1 160px; min-width:158px; padding:16px 18px 14px; }
@@ -243,6 +260,9 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .stButton > button:hover { background:rgba(255,255,255,.2); }
 /* ---------- 手机端适配（≤640px，Streamlit 列堆叠断点） ---------- */
 @media (max-width: 640px) {
+  .intel-hero { grid-template-columns:1fr; gap:12px; padding:18px; }
+  .intel-copy .hero h1 { font-size:1.5rem; }
+  .signal-panel { border-left:0; border-top:1px solid var(--line); padding:12px 0 0; }
   .hero h1 { font-size:1.5rem; }
   .hero-sub { display:none; }  /* 副标题折行占地，手机端隐藏 */
   /* 手机端增加呼吸感：页头与侧栏间距恢复常态（桌面紧凑化不适用于触屏小窗） */
@@ -288,6 +308,31 @@ def hero(badge: str, title: str, sub: str) -> None:
     )
 
 
+def intel_hero(items: list[dict], updated_at: object = None) -> None:
+    """首页情报焦点：摘要与榜单前列的真实增幅构成轻量信号图。"""
+    esc = _html.escape
+    values = [max(0, int(item.get("gained", 0))) for item in items[:8]]
+    peak = max(values, default=0)
+    bars = "".join(
+        f'<i style="height:{max(8, round(value / peak * 100)) if peak else 8}%"></i>'
+        for value in values
+    )
+    top_repo = esc(items[0].get("repo", "等待榜单更新")) if items else "暂无数据"
+    peak_text = f"+{peak:,}" if values else "—"
+    update_text = f"更新于 {updated_at:%H:%M}" if updated_at else "GitHub Trending 每日更新"
+    st.markdown(
+        '<section class="intel-hero">'
+        '<div class="intel-copy"><div class="intel-kicker">社区信号 · 实时观察</div>'
+        '<div class="hero"><h1>开源社区痛点情报中心</h1>'
+        '<div class="hero-sub">从 GitHub Issue 与项目热度中，发现正在升温的需求和问题。</div></div>'
+        '</div><div class="signal-panel"><div class="signal-top">'
+        '<span class="signal-label">今日 Star 增幅最高</span>'
+        f'<span><b class="signal-value">{peak_text}</b><span class="signal-unit">stars</span></span>'
+        f'</div><div class="signal-bars" aria-label="榜单前列 Star 增幅：{peak_text}">{bars}</div>'
+        f'<div class="signal-foot"><span>{top_repo}</span><span>{esc(update_text)}</span></div>'
+        '</div></section>',
+        unsafe_allow_html=True,
+    )
 def stat_cards(items: list[tuple[str, str, str]]) -> None:
     """一行磨砂玻璃统计卡。items: [(标签, 数值, 强调色)]。"""
     cells = "".join(
