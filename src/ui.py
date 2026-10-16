@@ -151,13 +151,15 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .signal-top .signal-value { color:#ffd08a; text-shadow:0 0 22px rgba(255,159,10,.18); }
 .signal-unit { color:var(--sub); font-size:.78rem; margin-left:5px; }
 .signal-scale { display:flex; justify-content:space-between; color:var(--faint); font-size:.68rem; margin-top:8px; }
-.signal-bars { height:52px; display:flex; align-items:end; gap:5px; margin:2px 0 0;
+.signal-bars { height:70px; display:flex; align-items:end; gap:5px; margin:2px 0 0;
   border-bottom:1px solid var(--line-strong); }
 .signal-item { flex:1; min-width:4px; height:100%; display:flex; flex-direction:column;
   justify-content:end; align-items:center; gap:3px; }
+.signal-number { color:var(--sub); font-size:.54rem; line-height:1;
+  font-variant-numeric:tabular-nums; white-space:nowrap; }
 .signal-item i { display:block; width:100%; max-width:22px; min-height:3px;
   border-radius:3px 3px 1px 1px;
-  background:rgba(48,209,88,.72); transform-origin:bottom;
+  background:var(--bar-color,#8da0b8); transform-origin:bottom;
   animation:signal-rise .65s cubic-bezier(.2,.75,.25,1) both; }
 .signal-item:nth-child(2) i { animation-delay:45ms; }
 .signal-item:nth-child(3) i { animation-delay:90ms; }
@@ -166,7 +168,6 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] { margin-top:.6rem; 
 .signal-item:nth-child(6) i { animation-delay:225ms; }
 .signal-item:nth-child(7) i { animation-delay:270ms; }
 .signal-item:nth-child(8) i { animation-delay:315ms; }
-.signal-item:first-child i { background:rgba(255,159,10,.9); }
 @keyframes signal-rise { from { transform:scaleY(.15); opacity:.35; } to { transform:scaleY(1); opacity:1; } }
 .signal-item small { color:var(--faint); font-size:.62rem; line-height:1; }
 .signal-feature { display:flex; align-items:flex-start; gap:9px; margin-top:10px; }
@@ -436,10 +437,19 @@ def intel_hero(items: list[dict], updated_at: object = None) -> None:
     esc = _html.escape
     values = [max(0, int(item.get("gained", 0))) for item in items[:8]]
     peak = max(values, default=0)
+    bar_colors = ("#ffbf5f", "#cbd5e1", "#ce8b68", "#55c6b0", "#70aee8", "#8e99d6", "#92a8b8", "#72a9b2")
+
+    def compact_value(value: int) -> str:
+        if value >= 1000:
+            return f"{value / 1000:.1f}".removesuffix(".0") + "k"
+        return str(value)
+
     bars = "".join(
-        f'<span class="signal-item"><i title="榜单第{rank}：+{value:,} stars" '
+        f'<span class="signal-item"><span class="signal-number">+{compact_value(value)}</span>'
+        f'<i title="榜单第{rank}：+{value:,} stars" '
         f'aria-label="榜单第{rank}：+{value:,} stars" '
-        f'style="height:{max(6, round(value / peak * 78)) if peak else 6}%"></i>'
+        f'style="height:{max(4, round(value / peak * 40)) if peak else 4}px;'
+        f'--bar-color:{bar_colors[rank - 1]}"></i>'
         f'<small>{rank}</small></span>'
         for rank, value in enumerate(values, start=1)
     )
