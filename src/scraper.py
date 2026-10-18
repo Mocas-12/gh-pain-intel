@@ -128,7 +128,10 @@ class GitHubClient:
             if code == 429:  # 次级限流：短退避重试
                 if attempt == max_retry:
                     return resp
-                wait = min(float(resp.headers.get("Retry-After", 5) or 5), 15)
+                try:
+                    wait = min(float(resp.headers.get("Retry-After", 5) or 5), 15)
+                except ValueError:  # Retry-After 允许 HTTP-日期格式，无法解析时退回默认退避
+                    wait = 5
                 time.sleep(wait)
                 continue
             if code >= 500 and attempt < max_retry:

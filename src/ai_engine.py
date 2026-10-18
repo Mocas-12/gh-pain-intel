@@ -175,7 +175,11 @@ class PainIntelEngine:
                 )
                 if resp.status_code == 429 or resp.status_code >= 500:
                     wait = resp.headers.get("Retry-After")
-                    time.sleep(min(float(wait) if wait else delay, 30.0))
+                    try:
+                        wait = min(float(wait) if wait else delay, 30.0)
+                    except ValueError:  # Retry-After 允许 HTTP-日期格式，无法解析时退回指数退避
+                        wait = delay
+                    time.sleep(wait)
                     delay *= 2
                     last_exc = RuntimeError(f"HTTP {resp.status_code}")
                     continue

@@ -413,25 +413,6 @@ def inject() -> None:
     st.markdown(_CSS, unsafe_allow_html=True)
 
 
-def hero(badge: str, title: str, sub: str) -> None:
-    """页面顶部大标题；badge 为空串时不渲染徽章行。"""
-    def esc(s: object) -> str:
-        return _html.escape(str(s))
-    badge_html = (
-        f'<div class="hero-badge"><span class="hero-dot"></span>{esc(badge)}</div>'
-        if badge
-        else ""
-    )
-    st.markdown(
-        '<div class="hero">'
-        f'{badge_html}'
-        f'<h1>{esc(title)}</h1>'
-        f'<div class="hero-sub">{esc(sub)}</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-
 def intel_hero(items: list[dict], updated_at: object = None) -> None:
     """首页情报焦点：摘要与榜单前列的真实增幅构成轻量信号图。"""
     esc = _html.escape
