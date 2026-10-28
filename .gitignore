@@ -28,3 +28,6 @@ Thumbs.db
 
 # Mimosa 安全插件的本地会话状态
 .mimosa/
+
+# Local Hallmark snapshots and source archive
+.hallmark/

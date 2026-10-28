@@ -59,12 +59,28 @@ except Exception as exc:
 
 ts = last_updated()
 intel_hero(hot_repos, ts)
-head_col, refresh_col = st.columns([0.95, 0.05], vertical_alignment="center")
+section_head("从增长到问题", "选择目标仓库，继续分析社区近期 Issue")
+action_col, action_copy = st.columns([2, 5], vertical_alignment="center")
+with action_col:
+    run_btn = st.button(
+        "开始分析 Issue", type="primary", use_container_width=True, key="start_analysis"
+    )
+with action_copy:
+    st.markdown(
+        '<div class="home-action-copy">从仓库热度进入真实反馈，提炼高频痛点、功能诉求与趋势。'
+        '仓库和模型参数在左侧配置。</div>',
+        unsafe_allow_html=True,
+    )
+
+st.divider()
+
+
+head_col, refresh_col = st.columns([9, 1], vertical_alignment="center")
 with head_col:
     sub = "GitHub 官方 Trending · 最近一天新增星标 · 每日更新"
     if ts:
         sub += f" · 更新于 {ts:%H:%M}"
-    section_head("🔥 今日 STAR 增幅 TOP 10", sub)
+    section_head("今日 STAR 增幅 TOP 10", sub)
 if refresh_col.button(
     "↻\uFE0E",  # U+FE0E 强制文本渲染，避免彩色 emoji 与主题色冲突
     key="refresh_hot",
@@ -104,20 +120,6 @@ if hot_repos:
 else:
     st.info("榜单暂无数据：数据源为 GitHub 官方 Trending 页面，稍后刷新页面重试")
 
-section_head("从增长到问题", "选择目标仓库，继续分析社区近期 Issue")
-action_col, action_copy = st.columns([1.15, 5], vertical_alignment="center")
-with action_col:
-    run_btn = st.button(
-        "开始分析 Issue", type="primary", use_container_width=True, key="start_analysis"
-    )
-with action_copy:
-    st.markdown(
-        '<div class="home-action-copy">从仓库热度进入真实反馈，提炼高频痛点、功能诉求与趋势。'
-        '仓库和模型参数在左侧配置。</div>',
-        unsafe_allow_html=True,
-    )
-
-st.divider()
 
 
 def _get_secret(key: str, default: str = "") -> str:
@@ -133,7 +135,7 @@ def _get_secret(key: str, default: str = "") -> str:
 
 # ---------------- 侧边栏配置 ----------------
 with st.sidebar:
-    st.header("⚙️ 配置")
+    st.header("分析配置")
     repos_raw = st.text_area(
         "目标仓库（每行一个 owner/repo）",
         "ollama/ollama\nlangchain-ai/langchain",
@@ -202,7 +204,7 @@ with st.sidebar:
                 "Key 已就绪。共享在线版仅在当前会话使用；自部署时放入根目录 .env 可长期保存。"
             )
 
-    with st.expander("🧠 高级设置（端点 · 模型 · 并发）"):
+    with st.expander("高级设置：端点、模型与并发"):
 
         base_url = st.text_input(
             "API 端点（OpenAI 兼容）",
@@ -396,7 +398,7 @@ if st.session_state.result:
     home_focus(result)
 
     tab_pain, tab_feat, tab_trend, tab_report = st.tabs(
-        ["🐞 高频痛点", "🚀 功能诉求", "📈 情绪与趋势", "📄 研究报告"]
+        ["高频痛点", "功能诉求", "情绪与趋势", "研究报告"]
     )
 
     # ----- 板块一 -----
@@ -507,7 +509,7 @@ if st.session_state.result:
         md = build_report(meta, result)
         fname = "pain-intel-" + meta["generated_at"].replace(":", "").replace(" ", "_") + ".md"
         st.download_button(
-            "⬇️ 一键下载 Markdown 研究报告",
+            "下载 Markdown 研究报告",
             md,
             file_name=fname,
             mime="text/markdown",
